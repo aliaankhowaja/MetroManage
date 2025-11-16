@@ -1,12 +1,12 @@
 package com.metromanage.domain;
 
 public class Bus{
-    private String busID;
+    private int busID;
     private String plateNumber;
     private int capacity;
     private String status;
-    private String routeID;
-    public Bus(String busID, String plateNumber, int capacity, String status, String routeID) {
+    private int routeID;
+    public Bus(int busID, String plateNumber, int capacity, String status, int routeID) {
         this.busID = busID;
         this.plateNumber = plateNumber;
         this.capacity = capacity;
@@ -17,8 +17,48 @@ public class Bus{
 
     }
 
-    public void markDeleted(){
+    public void markDeleted() {
 
     }
     
+    public int getBusID() {
+        return busID;
+    }
+
+    public String getPlateNumber() {
+        return plateNumber;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+    
+    public int getRouteID() {
+        return routeID;
+    }
+
+    public void setBusID(int busID) {
+        this.busID = busID;
+    }
+
+    public void setPlateNumber(String plateNumber) {
+        this.plateNumber = plateNumber;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+    
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setRouteID(int routeID) {
+        this.routeID = routeID;
+    }
+    public Bus(){}
 }
