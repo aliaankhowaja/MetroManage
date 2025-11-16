@@ -1,0 +1,6 @@
+ride(id, ticketIssueTime, ticketExpiryTime, ticketStatus, paymentID, routeID, busID, boardingTime, arrivalTime, isActive)
+route(id, routeName, totalDistance, estimatedTime, isActive, cost)
+payment(id, PassengerID, Amount, PaymentDate, CardNumber, CardHolderName, CardExpiryDate, PaymentType)
+bus(id, plateNumber, capacity, status, routeID)
+RouteStation(stationID, routeID)
+Station(id, name, latitude, longitude, status)

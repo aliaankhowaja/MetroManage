@@ -1,25 +1,22 @@
 package com.metromanage.domain;
 
-import com.metromanage.model.PaymentPersistanceHandler;
 import java.sql.Connection;
-public class CashPayment implements Payment {
+
+import com.metromanage.model.PaymentPersistanceHandler;
+
+public class WalletPayment implements Payment {
     private int paymentID;
     private int passengerID;
     private float amount;
     private String paymentDate;
-    
-    public CashPayment(int passengerID, float amount, String paymentDate, Connection connection) {
+
+    public WalletPayment(int passengerID, float amount, String paymentDate, Connection connection) {
+
         this.passengerID = passengerID;
         this.amount = amount;
         this.paymentDate = paymentDate;
         PaymentPersistanceHandler pph = new PaymentPersistanceHandler(connection);
-        this.paymentID = pph.savePayment(this, "Cash");
-    }
-   
-    public CashPayment(float amount, String paymentDate) {
-        this.passengerID = 0;
-        this.amount = amount;
-        this.paymentDate = paymentDate;
+        this.paymentID = pph.savePayment(this, "Wallet");
     }
 
     public int getPaymentID() {
@@ -33,7 +30,11 @@ public class CashPayment implements Payment {
     public float getAmount() {
         return amount;
     }
+
     public String getPaymentDate() {
         return paymentDate;
     }
+    
+    
+    
 }
