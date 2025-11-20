@@ -90,4 +90,30 @@ public class PassengerPersistanceHandler extends PersistanceHandler {
             return null;
         }
     }
+
+    public Object findByEmail(String email) {
+        String findQuery = "Select * From Passenger Where email = ?";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(findQuery)) {
+            pstmt.setString(1, email);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    Passenger passenger = new Passenger();
+                    passenger.setPassengerID(rs.getInt("passengerID"));
+                    passenger.setName(rs.getString("name"));
+                    passenger.setEmail(rs.getString("email"));
+                    passenger.setPhoneNumber(rs.getString("phoneNumber"));
+                    passenger.setPasswordHash(rs.getString("passwordHash"));
+                    passenger.setStatus(rs.getString("status"));
+                    passenger.setRegistrationDate(rs.getTimestamp("registrationDate").toLocalDateTime());
+                    passenger.setWalletBalance(rs.getFloat("walletBalance"));
+                    return passenger;
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
