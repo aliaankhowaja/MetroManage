@@ -7,9 +7,9 @@ import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.RidePersistanceHandler;
 import com.metromanage.model.TicketPersistanceHandler;
 
-public class Register {
+public class StationRegister {
     Connection dbConnection;
-    public Register(Connection connection){
+    public StationRegister(Connection connection){
         this.dbConnection = connection;
     }
 
