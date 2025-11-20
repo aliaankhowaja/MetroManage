@@ -47,6 +47,9 @@ public class Main{
         // register.requestTicket(route2, "Card", "1234567890123456,Alice Johnson,12/25", DB.getConnection());
         // register.requestTicket(route3, "Cash", "", DB.getConnection());
         register.checkIn(16, 3, DB.getConnection());
+        register.checkOut(13, DB.getConnection());
+        register.checkOut(16, DB.getConnection());
+
         
 
     }
