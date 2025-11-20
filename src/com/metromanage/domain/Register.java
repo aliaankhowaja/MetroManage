@@ -45,8 +45,12 @@ public class Register {
         Ride ride = (Ride) rph.find(ticketId);
         BusPersistanceHandler bph = new BusPersistanceHandler(connection);
         Bus bus = (Bus) bph.find(busId);
-        if(ride.getRoute().getRouteID() != bus.getRouteID()){
+        if (ride.getRoute().getRouteID() != bus.getRouteID()) {
             System.out.println("Bus does not serve the route of the ticket. Check-in failed.");
+            return;
+        }
+        if(bus.getStatus().equals("Inactive")){
+            System.out.println("Bus is inactive. Check-in failed.");
             return;
         }
         ticket.setStatus("Used"); // Mark ticket as used
