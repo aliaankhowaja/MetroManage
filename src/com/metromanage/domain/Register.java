@@ -29,7 +29,7 @@ public class Register {
         return ticket;
     }
 
-    public void checkIn(int ticketId, int busId, Connection connection){
+    public void checkIn(int ticketId, int busId, Connection connection) {
         TicketPersistanceHandler tph = new TicketPersistanceHandler(connection);
         Ticket ticket = (Ticket) tph.find(ticketId);
         if (ticket == null) {
@@ -45,17 +45,41 @@ public class Register {
         Ride ride = (Ride) rph.find(ticketId);
         BusPersistanceHandler bph = new BusPersistanceHandler(connection);
         Bus bus = (Bus) bph.find(busId);
-        if(ride.getRoute().getRouteID() != bus.getRouteID()){
+        if (ride.getRoute().getRouteID() != bus.getRouteID()) {
             System.out.println("Bus does not serve the route of the ticket. Check-in failed.");
             return;
         }
         ticket.setStatus("Used"); // Mark ticket as used
         LocalDateTime now = LocalDateTime.now();
         ride.setBoardingTime(now);
-        ride.setBus(bus);  
+        ride.setBus(bus);
         rph.save(ride);
         tph.save(ticket);
         System.out.println("Check-in successful for Ticket ID: " + ticketId + " on Bus ID: " + busId);
+    }
+    public void checkOut(int ticketId, Connection connection) {
+        TicketPersistanceHandler tph = new TicketPersistanceHandler(connection);
+        Ticket ticket = (Ticket) tph.find(ticketId);
+        if (ticket == null) {
+            System.out.println("Invalid Ticket ID");
+            return;
+        }
+        RidePersistanceHandler rph = new RidePersistanceHandler(connection);
+        Ride ride = (Ride) rph.find(ticketId);
+        ticket.setRide(ride);
+        if (!ticket.isValidForCheckout()) {
+            System.out.println("Ticket is not valid for checkout. Check-out failed.");
+            return;
+        }
+        
+
+        
+
+        LocalDateTime now = LocalDateTime.now();
+        ride.setArrivalTime(now);
+        ride.setActive(false);
+        rph.save(ride);
+        System.out.println("Check-out successful for Ticket ID: " + ticketId);
     }
     
 }
