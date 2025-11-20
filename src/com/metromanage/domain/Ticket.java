@@ -121,4 +121,10 @@ public class Ticket{
 
         return status.equals("Active") && now.isBefore(expiryTime);
     }
+
+    public boolean isValidForCheckout() {
+        LocalDateTime now = LocalDateTime.now();
+
+        return status.equals("Used") && now.isBefore(expiryTime) && ride.isActive();
+    }
 }
