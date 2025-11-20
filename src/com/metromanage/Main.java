@@ -7,6 +7,7 @@ import com.metromanage.domain.Register;
 import com.metromanage.domain.Route;
 import com.metromanage.domain.Station;
 import com.metromanage.model.DB;
+import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
 public class Main{
     public static void main(String[] args) {
@@ -32,7 +33,18 @@ public class Main{
 
         Register register = new Register(DB.getConnection());
 
-        
+        // Passenger passenger1 = new Passenger("Alice Johnson", "alice.johnson@example.com", "555-1234", "passwordHash",
+        //         "2024-06-01T12:00:00", 50.0f, DB.getConnection());
+        // Passenger passenger2 = new Passenger("Bob Smith", "bob.smith@example.com", "555-5678", "passwordHash",
+        //         "2024-06-02T13:30:00", 30.0f, DB.getConnection());
+        // Passenger passenger3 = new Passenger("Charlie Brown", "charlie.brown@example.com", "555-9012", "passwordHash",
+        //         "2024-06-03T15:45:00", 20.0f, DB.getConnection());
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler(DB.getConnection());
+        Passenger passenger1 = (Passenger) pph.find(1);
+        Passenger passenger2 = (Passenger) pph.find(2);
+        Passenger passenger3 = (Passenger) pph.find(3);
+
+
         RoutePersistanceHandler rph = new RoutePersistanceHandler(DB.getConnection());
         Route route1 = (Route) rph.find(1);
         Route route2 = (Route) rph.find(2);
@@ -45,12 +57,11 @@ public class Main{
         
         // register.requestTicket(route1, "Wallet", passenger1, "", DB.getConnection());
         // register.requestTicket(route2, "Card", "1234567890123456,Alice Johnson,12/25", DB.getConnection());
-        // register.requestTicket(route3, "Cash", "", DB.getConnection());
-        register.checkIn(16, 3, DB.getConnection());
-        register.checkOut(13, DB.getConnection());
-        register.checkOut(16, DB.getConnection());
+        // register.requestTicket(route3, "Wallet", passenger3, "", DB.getConnection());
+        // register.checkIn(16, 3, DB.getConnection());
+        // register.checkOut(13, DB.getConnection());
+        // register.checkOut(16, DB.getConnection());
 
-        
 
     }
 }

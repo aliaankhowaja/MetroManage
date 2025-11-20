@@ -3,6 +3,7 @@ package com.metromanage.domain;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 
+import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.TicketPersistanceHandler;
 
 public class Ticket{
@@ -42,6 +43,8 @@ public class Ticket{
             throw new IllegalArgumentException("Unsupported payment method.");
         }
         TicketPersistanceHandler tph = new TicketPersistanceHandler(connection);
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler(connection);
+        pph.save(passenger); // Update passenger wallet balance
         this.ticketID = tph.save(this);
 
     }
