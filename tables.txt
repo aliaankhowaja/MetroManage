@@ -4,3 +4,4 @@ payment(id, PassengerID, Amount, PaymentDate, CardNumber, CardHolderName, CardEx
 bus(id, plateNumber, capacity, status, routeID)
 RouteStation(stationID, routeID)
 Station(id, name, latitude, longitude, status)
+Passenger(id, name, email, phoneNumber, passwordHash, status, registrationDate, walletBalance)
