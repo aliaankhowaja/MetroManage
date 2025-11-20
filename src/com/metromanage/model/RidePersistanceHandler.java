@@ -79,7 +79,7 @@ public class RidePersistanceHandler extends PersistanceHandler {
                     ride.setBoardingTime(rs.getTimestamp("boardingTime") != null ? rs.getTimestamp("boardingTime").toLocalDateTime() : null);
                     ride.setArrivalTime(rs.getTimestamp("arrivalTime") != null ? rs.getTimestamp("arrivalTime").toLocalDateTime() : null);
                     ride.setActive(rs.getBoolean("isActive"));
-                    Ticket ticket = (Ticket) new TicketPersistanceHandler(dbConnection).find(rs.getInt("ticketID"));
+                    Ticket ticket = (Ticket) new TicketPersistanceHandler(dbConnection).find(rs.getInt("id"));
                     ride.setTicket(ticket);
                     return ride;
                 } else {

@@ -1,5 +1,4 @@
 package com.metromanage.domain;
-import java.time.LocalDateTime;
 public interface Payment {
     
     public int getPaymentID();

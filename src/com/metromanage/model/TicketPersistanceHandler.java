@@ -14,6 +14,20 @@ public class TicketPersistanceHandler extends PersistanceHandler {
     @Override
     public int save(Object obj) {
         Ticket ticket = (Ticket) obj;
+        if(ticket.getTicketID() != 0){
+            String updateQuery = "Update ride Set ticketIssueTime = ?, ticketExpiryTime = ?, ticketStatus = ?, paymentID = ? Where id = ?";
+            try (PreparedStatement pstmt = dbConnection.prepareStatement(updateQuery)) {
+                pstmt.setTimestamp(1, Timestamp.valueOf(ticket.getIssueTime()));
+                pstmt.setTimestamp(2, Timestamp.valueOf(ticket.getExpiryTime()));
+                pstmt.setString(3, ticket.getStatus());
+                pstmt.setInt(4, ticket.getPaymentID());
+                pstmt.setInt(5, ticket.getTicketID());
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return ticket.getTicketID();
+        }
         String saveQuery = "Insert Into ride(ticketIssueTime, ticketExpiryTime, ticketStatus, paymentID) Values(?,?,?,?)";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(saveQuery, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setTimestamp(1, Timestamp.valueOf(ticket.getIssueTime()));

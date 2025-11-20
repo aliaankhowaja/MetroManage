@@ -38,12 +38,15 @@ public class Main{
         Route route2 = (Route) rph.find(2);
         Route route3 = (Route) rph.find(3);
 
-        
+
+        // Bus bus1 = new Bus("APH-313", 40, "Active", 1, DB.getConnection());
+        // Bus bus2 = new Bus("BPH-414", 50, "Active", 2, DB.getConnection());
+        // Bus bus3 = new Bus("CPH-515", 30, "Active", 3, DB.getConnection());
         
         // register.requestTicket(route1, "Wallet", passenger1, "", DB.getConnection());
         // register.requestTicket(route2, "Card", "1234567890123456,Alice Johnson,12/25", DB.getConnection());
-        register.requestTicket(route3, "Cash", "", DB.getConnection());
-        register.checkIn(13, 1, DB.getConnection());
+        // register.requestTicket(route3, "Cash", "", DB.getConnection());
+        register.checkIn(16, 3, DB.getConnection());
         
 
     }

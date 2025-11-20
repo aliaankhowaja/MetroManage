@@ -3,7 +3,6 @@ package com.metromanage.model;
 import java.sql.Connection;
 
 import com.metromanage.domain.Bus;
-import com.metromanage.domain.Ticket;
 import java.sql.*;
 
 public class BusPersistanceHandler extends PersistanceHandler {

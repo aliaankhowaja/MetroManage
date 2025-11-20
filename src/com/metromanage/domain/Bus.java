@@ -1,11 +1,16 @@
 package com.metromanage.domain;
 
+import java.sql.Connection;
+
+import com.metromanage.model.BusPersistanceHandler;
+
 public class Bus{
     private int busID;
     private String plateNumber;
     private int capacity;
     private String status;
     private int routeID;
+
     public Bus(int busID, String plateNumber, int capacity, String status, int routeID) {
         this.busID = busID;
         this.plateNumber = plateNumber;
@@ -13,6 +18,16 @@ public class Bus{
         this.status = status;
         this.routeID = routeID;
     }
+    
+    public Bus(String plateNumber, int capacity, String status, int routeID, Connection connection) {
+        this.plateNumber = plateNumber;
+        this.capacity = capacity;
+        this.status = status;
+        this.routeID = routeID;
+        BusPersistanceHandler bph = new BusPersistanceHandler(connection);
+        this.busID = bph.save(this);
+    }
+
     public void applyChanges(){
 
     }
