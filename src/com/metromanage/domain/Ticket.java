@@ -111,7 +111,14 @@ public class Ticket{
     public int getPaymentID() {
         return paymentID;
     }
+
     public void setPaymentID(int paymentID) {
         this.paymentID = paymentID;
+    }
+    
+    public boolean isValidTicket() {
+        LocalDateTime now = LocalDateTime.now();
+
+        return status.equals("Active") && now.isBefore(expiryTime);
     }
 }
