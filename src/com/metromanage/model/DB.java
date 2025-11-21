@@ -20,6 +20,7 @@ public class DB {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            System.out.println("Created db connection");
             return dbConnection;
         }else {
             return dbConnection;

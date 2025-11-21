@@ -7,8 +7,8 @@ import com.metromanage.domain.Payment;
 
 public class PaymentPersistanceHandler extends PersistanceHandler {
 
-    public PaymentPersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public PaymentPersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override

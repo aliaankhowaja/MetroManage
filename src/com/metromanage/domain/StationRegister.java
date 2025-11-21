@@ -4,33 +4,34 @@ import java.sql.*;
 import java.time.LocalDateTime;
 
 import com.metromanage.model.BusPersistanceHandler;
+import com.metromanage.model.DB;
 import com.metromanage.model.RidePersistanceHandler;
 import com.metromanage.model.TicketPersistanceHandler;
 
 public class StationRegister {
     Connection dbConnection;
-    public StationRegister(Connection connection){
-        this.dbConnection = connection;
+    public StationRegister(){
+        this.dbConnection = DB.getConnection();
     }
 
-    public Ticket requestTicket(Route route, String paymentMethod, Passenger passenger, String paymentDetails, Connection connection){
+    public Ticket requestTicket(Route route, String paymentMethod, Passenger passenger, String paymentDetails){
         float cost = route.getCost();
-        Ticket ticket = new Ticket(passenger, cost, paymentMethod, paymentDetails, connection);
-        Ride ride = new Ride(route, ticket, connection);
+        Ticket ticket = new Ticket(passenger, cost, paymentMethod, paymentDetails);
+        Ride ride = new Ride(route, ticket);
         ticket.setRide(ride);
         return ticket;
     }
 
-    public Ticket requestTicket(Route route, String paymentMethod, String paymentDetails, Connection connection) {
+    public Ticket requestTicket(Route route, String paymentMethod, String paymentDetails) {
         float cost = route.getCost();
-        Ticket ticket = new Ticket(cost, paymentMethod, paymentDetails, connection);
-        Ride ride = new Ride(route, ticket, connection);
+        Ticket ticket = new Ticket(cost, paymentMethod, paymentDetails);
+        Ride ride = new Ride(route, ticket);
         ticket.setRide(ride);
         return ticket;
     }
 
-    public void checkIn(int ticketId, int busId, Connection connection) {
-        TicketPersistanceHandler tph = new TicketPersistanceHandler(connection);
+    public void checkIn(int ticketId, int busId) {
+        TicketPersistanceHandler tph = new TicketPersistanceHandler();
         Ticket ticket = (Ticket) tph.find(ticketId);
         if (ticket == null) {
             System.out.println("Invalid Ticket ID");
@@ -41,9 +42,9 @@ public class StationRegister {
             System.out.println("Ticket is invalid or expired. Check-in failed.");
             return;
         }
-        RidePersistanceHandler rph = new RidePersistanceHandler(connection);
+        RidePersistanceHandler rph = new RidePersistanceHandler();
         Ride ride = (Ride) rph.find(ticketId);
-        BusPersistanceHandler bph = new BusPersistanceHandler(connection);
+        BusPersistanceHandler bph = new BusPersistanceHandler();
         Bus bus = (Bus) bph.find(busId);
         if (ride.getRoute().getRouteID() != bus.getRouteID()) {
             System.out.println("Bus does not serve the route of the ticket. Check-in failed.");
@@ -61,14 +62,14 @@ public class StationRegister {
         tph.save(ticket);
         System.out.println("Check-in successful for Ticket ID: " + ticketId + " on Bus ID: " + busId);
     }
-    public void checkOut(int ticketId, Connection connection) {
-        TicketPersistanceHandler tph = new TicketPersistanceHandler(connection);
+    public void checkOut(int ticketId) {
+        TicketPersistanceHandler tph = new TicketPersistanceHandler();
         Ticket ticket = (Ticket) tph.find(ticketId);
         if (ticket == null) {
             System.out.println("Invalid Ticket ID");
             return;
         }
-        RidePersistanceHandler rph = new RidePersistanceHandler(connection);
+        RidePersistanceHandler rph = new RidePersistanceHandler();
         Ride ride = (Ride) rph.find(ticketId);
         ticket.setRide(ride);
         if (!ticket.isValidForCheckout()) {

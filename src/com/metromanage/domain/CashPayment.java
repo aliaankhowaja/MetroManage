@@ -1,18 +1,17 @@
 package com.metromanage.domain;
 
 import com.metromanage.model.PaymentPersistanceHandler;
-import java.sql.Connection;
 public class CashPayment implements Payment {
     private int paymentID;
     private int passengerID;
     private float amount;
     private String paymentDate;
     
-    public CashPayment(int passengerID, float amount, String paymentDate, Connection connection) {
+    public CashPayment(int passengerID, float amount, String paymentDate) {
         this.passengerID = passengerID;
         this.amount = amount;
         this.paymentDate = paymentDate;
-        PaymentPersistanceHandler pph = new PaymentPersistanceHandler(connection);
+        PaymentPersistanceHandler pph = new PaymentPersistanceHandler();
         this.paymentID = pph.savePayment(this, "Cash");
     }
    

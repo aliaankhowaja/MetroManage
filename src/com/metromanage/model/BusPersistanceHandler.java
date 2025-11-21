@@ -1,14 +1,12 @@
 package com.metromanage.model;
 
-import java.sql.Connection;
-
 import com.metromanage.domain.Bus;
 import java.sql.*;
 
 public class BusPersistanceHandler extends PersistanceHandler {
 
-    public BusPersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public BusPersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override

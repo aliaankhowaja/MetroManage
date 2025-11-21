@@ -1,6 +1,4 @@
 package com.metromanage.domain;
-
-import java.sql.Connection;
 import java.util.ArrayList;
 
 import com.metromanage.model.StationPersistanceHandler;
@@ -21,12 +19,12 @@ public class Station{
         this.routes = routes;
     }
 
-    public Station(String name, float latitude, float longitude, String status, Connection  connection) {
+    public Station(String name, float latitude, float longitude, String status) {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.status = status;
-        StationPersistanceHandler sph = new StationPersistanceHandler(connection);
+        StationPersistanceHandler sph = new StationPersistanceHandler();
         this.stationID = sph.save(this);
     }
 

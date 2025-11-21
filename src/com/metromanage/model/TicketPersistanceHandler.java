@@ -1,14 +1,12 @@
 package com.metromanage.model;
 
-import java.sql.Connection;
-
 import com.metromanage.domain.Ticket;
 import java.sql.*;
 
 public class TicketPersistanceHandler extends PersistanceHandler {
 
-    public TicketPersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public TicketPersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override
