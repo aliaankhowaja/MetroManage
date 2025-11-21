@@ -5,8 +5,8 @@ import java.util.ArrayList;
 
 public class RouteStationPersistanceHandler extends PersistanceHandler {
 
-    public RouteStationPersistanceHandler(String connectionString) {
-        this.connectionString = connectionString;
+    public RouteStationPersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override
@@ -27,8 +27,7 @@ public class RouteStationPersistanceHandler extends PersistanceHandler {
 
     public void assignStationToRoute(int stationID, int routeID) {
         String insertQuery = "Insert Into RouteStation(stationID, routeID) Values(?,?)";
-        try (Connection connection = DriverManager.getConnection(connectionString);
-             PreparedStatement pstmt = connection.prepareStatement(insertQuery)) {
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(insertQuery)) {
             pstmt.setInt(1, stationID);
             pstmt.setInt(2, routeID);
             pstmt.executeUpdate();

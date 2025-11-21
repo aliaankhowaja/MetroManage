@@ -1,7 +1,5 @@
 package com.metromanage.domain;
 
-import java.sql.Connection;
-
 import com.metromanage.model.PaymentPersistanceHandler;
 
 public class WalletPayment implements Payment {
@@ -10,12 +8,12 @@ public class WalletPayment implements Payment {
     private float amount;
     private String paymentDate;
 
-    public WalletPayment(int passengerID, float amount, String paymentDate, Connection connection) {
+    public WalletPayment(int passengerID, float amount, String paymentDate) {
 
         this.passengerID = passengerID;
         this.amount = amount;
         this.paymentDate = paymentDate;
-        PaymentPersistanceHandler pph = new PaymentPersistanceHandler(connection);
+        PaymentPersistanceHandler pph = new PaymentPersistanceHandler();
         this.paymentID = pph.savePayment(this, "Wallet");
     }
 

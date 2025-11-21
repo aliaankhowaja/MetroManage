@@ -18,12 +18,12 @@ public class Ride{
 
     }
 
-    public Ride(Route route, Ticket ticket, Connection connection) {
+    public Ride(Route route, Ticket ticket) {
         this.rideID = ticket.getTicketID();
         this.route = route;
         this.ticket = ticket;
         this.isActive = true;
-        RidePersistanceHandler rph = new RidePersistanceHandler(connection);
+        RidePersistanceHandler rph = new RidePersistanceHandler();
         this.rideID = rph.save(this);
     }
 

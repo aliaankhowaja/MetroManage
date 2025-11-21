@@ -8,8 +8,8 @@ import java.sql.*;
 
 public class RidePersistanceHandler extends PersistanceHandler {
 
-    public RidePersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public RidePersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override
@@ -68,18 +68,18 @@ public class RidePersistanceHandler extends PersistanceHandler {
                 if (rs.next()) {
                     Ride ride = new Ride();
                     ride.setRideID(id);
-                    Route route = (Route) new RoutePersistanceHandler(dbConnection).find(rs.getInt("routeID"));
+                    Route route = (Route) new RoutePersistanceHandler().find(rs.getInt("routeID"));
                     ride.setRoute(route);
                     Bus bus = null;
                     int busId = rs.getInt("busID");
                     if(!rs.wasNull()) {
-                        bus = (Bus) new BusPersistanceHandler(dbConnection).find((int) busId);
+                        bus = (Bus) new BusPersistanceHandler().find((int) busId);
                     }
                     ride.setBus(bus);
                     ride.setBoardingTime(rs.getTimestamp("boardingTime") != null ? rs.getTimestamp("boardingTime").toLocalDateTime() : null);
                     ride.setArrivalTime(rs.getTimestamp("arrivalTime") != null ? rs.getTimestamp("arrivalTime").toLocalDateTime() : null);
                     ride.setActive(rs.getBoolean("isActive"));
-                    Ticket ticket = (Ticket) new TicketPersistanceHandler(dbConnection).find(rs.getInt("id"));
+                    Ticket ticket = (Ticket) new TicketPersistanceHandler().find(rs.getInt("id"));
                     ride.setTicket(ticket);
                     return ride;
                 } else {

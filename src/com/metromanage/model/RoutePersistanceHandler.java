@@ -1,14 +1,12 @@
 package com.metromanage.model;
 
-import java.sql.Connection;
-
 import com.metromanage.domain.Route;
 import java.sql.*;
 
 public class RoutePersistanceHandler extends PersistanceHandler {
 
-    public RoutePersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public RoutePersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override

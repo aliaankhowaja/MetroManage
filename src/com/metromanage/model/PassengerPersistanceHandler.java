@@ -1,14 +1,12 @@
 package com.metromanage.model;
 
-import java.sql.Connection;
-
 import com.metromanage.domain.Passenger;
 import java.sql.*;
 
 public class PassengerPersistanceHandler extends PersistanceHandler {
 
-    public PassengerPersistanceHandler(Connection connection) {
-        this.dbConnection = connection;
+    public PassengerPersistanceHandler() {
+        this.dbConnection = DB.getConnection();
     }
 
     @Override

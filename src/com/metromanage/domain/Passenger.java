@@ -3,7 +3,6 @@ package com.metromanage.domain;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
 import java.time.LocalDateTime;
 
 import com.metromanage.model.PassengerPersistanceHandler;
@@ -31,7 +30,7 @@ public class Passenger{
         this.walletBalance = walletBalance;
     }
 
-    public Passenger(String name, String email, String phoneNumber, String passwordHash, Float walletBalance, Connection connection) {
+    public Passenger(String name, String email, String phoneNumber, String passwordHash, Float walletBalance) {
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;
@@ -39,7 +38,7 @@ public class Passenger{
         this.status = "Active";
         this.registrationDate = LocalDateTime.now();
         this.walletBalance = walletBalance;
-        PassengerPersistanceHandler PassengerPersistanceHandler = new PassengerPersistanceHandler(connection);
+        PassengerPersistanceHandler PassengerPersistanceHandler = new PassengerPersistanceHandler();
         this.passengerID = PassengerPersistanceHandler.save(this);
     }
     
@@ -47,8 +46,8 @@ public class Passenger{
 
     }
 
-    public void markDeleted(Connection connection) {
-        PassengerPersistanceHandler pph = new PassengerPersistanceHandler(connection);
+    public void markDeleted() {
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
         pph.delete(this);
     }
     

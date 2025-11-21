@@ -34,7 +34,7 @@ public class Route{
         this.active = active;
         this.cost = cost;
         
-        RoutePersistanceHandler rph = new RoutePersistanceHandler(connection);
+        RoutePersistanceHandler rph = new RoutePersistanceHandler();
         this.routeID = rph.save(this);
             
     }

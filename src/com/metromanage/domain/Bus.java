@@ -1,7 +1,5 @@
 package com.metromanage.domain;
 
-import java.sql.Connection;
-
 import com.metromanage.model.BusPersistanceHandler;
 
 public class Bus{
@@ -19,12 +17,12 @@ public class Bus{
         this.routeID = routeID;
     }
     
-    public Bus(String plateNumber, int capacity, String status, int routeID, Connection connection) {
+    public Bus(String plateNumber, int capacity, String status, int routeID) {
         this.plateNumber = plateNumber;
         this.capacity = capacity;
         this.status = status;
         this.routeID = routeID;
-        BusPersistanceHandler bph = new BusPersistanceHandler(connection);
+        BusPersistanceHandler bph = new BusPersistanceHandler();
         this.busID = bph.save(this);
     }
 
