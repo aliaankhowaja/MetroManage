@@ -12,6 +12,20 @@ public class BusPersistanceHandler extends PersistanceHandler {
     @Override
     public int save(Object obj) {
         Bus bus = (Bus) obj;
+        if (bus.getBusID() != 0) {
+            String updateQuery = "Update Bus Set plateNumber = ?, capacity = ?, status = ?, routeID = ? Where id = ?";
+            try (PreparedStatement pstmt = dbConnection.prepareStatement(updateQuery)) {
+                pstmt.setString(1, bus.getPlateNumber());
+                pstmt.setInt(2, bus.getCapacity());
+                pstmt.setString(3, bus.getStatus());
+                pstmt.setInt(4, bus.getRouteID());
+                pstmt.setInt(5, bus.getBusID());
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return bus.getBusID();
+        }
         String saveQuery = "Insert Into Bus(plateNumber, capacity, status, routeID) Values(?,?,?,?)";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(saveQuery, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, bus.getPlateNumber());
@@ -37,7 +51,9 @@ public class BusPersistanceHandler extends PersistanceHandler {
 
     @Override
     public void delete(Object obj) {
-        // Implementation to delete Ticket object from DB
+        Bus bus = (Bus) obj;
+        bus.setStatus("Deleted");
+        save(bus);
     }
 
     @Override

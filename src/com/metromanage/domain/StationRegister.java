@@ -15,23 +15,23 @@ public class StationRegister {
         this.dbConnection = DB.getConnection();
     }
 
-    public Ticket requestTicket(Route route, String paymentMethod, Passenger passenger, String paymentDetails){
+    public Ticket requestTicket(Route route, String paymentMethod, Passenger passenger, String paymentDetails, int boardingStationID){
         float cost = route.getCost();
         Ticket ticket = new Ticket(passenger, cost, paymentMethod, paymentDetails);
-        Ride ride = new Ride(route, ticket);
+        Ride ride = new Ride(route, ticket, boardingStationID, 0);
         ticket.setRide(ride);
         return ticket;
     }
 
-    public Ticket requestTicket(Route route, String paymentMethod, String paymentDetails) {
+    public Ticket requestTicket(Route route, String paymentMethod, String paymentDetails, int boardingStationID) {
         float cost = route.getCost();
         Ticket ticket = new Ticket(cost, paymentMethod, paymentDetails);
-        Ride ride = new Ride(route, ticket);
+        Ride ride = new Ride(route, ticket, boardingStationID, 0);
         ticket.setRide(ride);
         return ticket;
     }
 
-    public void checkIn(int ticketId, int busId) {
+    public void checkIn(int ticketId, int busId, int boardingStationID) {
         TicketPersistanceHandler tph = new TicketPersistanceHandler();
         Ticket ticket = (Ticket) tph.find(ticketId);
         if (ticket == null) {
@@ -59,12 +59,13 @@ public class StationRegister {
         LocalDateTime now = LocalDateTime.now();
         ride.setBoardingTime(now);
         ride.setBus(bus);
+        ride.setBoardingStationID(boardingStationID);
         rph.save(ride);
         tph.save(ticket);
-        System.out.println("Check-in successful for Ticket ID: " + ticketId + " on Bus ID: " + busId);
+        System.out.println("Check-in successful for Ticket ID: " + ticketId + " on Bus ID: " + busId + " at Station ID: " + boardingStationID);
     }
 
-    public void checkOut(int ticketId) {
+    public void checkOut(int ticketId, int arrivalStationID) {
         TicketPersistanceHandler tph = new TicketPersistanceHandler();
         Ticket ticket = (Ticket) tph.find(ticketId);
         if (ticket == null) {
@@ -81,9 +82,10 @@ public class StationRegister {
 
         LocalDateTime now = LocalDateTime.now();
         ride.setArrivalTime(now);
+        ride.setArrivalStationID(arrivalStationID);
         ride.setActive(false);
         rph.save(ride);
-        System.out.println("Check-out successful for Ticket ID: " + ticketId);
+        System.out.println("Check-out successful for Ticket ID: " + ticketId + " at Station ID: " + arrivalStationID);
     }
     
     public void submitFeedback(int passengerID, String type, String comments) {

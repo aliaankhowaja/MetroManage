@@ -1,8 +1,12 @@
 package com.metromanage;
 
 import com.metromanage.domain.StationRegister;
+import com.metromanage.model.PassengerPersistanceHandler;
+import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
+import com.metromanage.domain.Passenger;
+import com.metromanage.domain.Route;
 public class Main{
     public static void main(String[] args) {
         System.out.println("Welcome to MetroManage!");
@@ -12,11 +16,24 @@ public class Main{
         // loginTest();
         // feedbackTest();
         // balanceTest();
+        // manageBusTest();
+    }
+
+    static void requestTicketTest() {
+        StationRegister stationRegister = new StationRegister();
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
+        RoutePersistanceHandler rph = new RoutePersistanceHandler();
+        Route route1 = (Route) rph.find(1);
+        
+        Passenger passenger = (Passenger) pph.find(5);
+        stationRegister.requestTicket(route1, "Wallet", passenger, "", 1);
+
+        
     }
 
     static void generateTestData() {
-        StationRegister stationRegister = new StationRegister();
-        AdminRegister adminRegister = new AdminRegister();
+        // StationRegister stationRegister = new StationRegister();
+        // AdminRegister adminRegister = new AdminRegister();
         // Station station1 = new Station("Central Station", 40.7128f, -74.0060f, "Active", DB.getConnection());
         // Station station2 = new Station("West End", 40.7138f, -74.0160f, "Active", DB.getConnection());
         // Station station3 = new Station("East Side", 40.7228f, -74.0010f, "Active", DB.getConnection());
@@ -62,6 +79,8 @@ public class Main{
 
     }
     
+
+
     static void loginTest() {
         LoginHandler loginHandler = new LoginHandler();
         loginHandler.logout();
@@ -84,7 +103,18 @@ public class Main{
         System.out.println("Passenger 1 wallet balance: " + balance);
         balance = stationRegister.checkBalance(7);
         System.out.println("Passenger 7 wallet balance: " + balance);
-        
+
+    }
+    
+
+
+    static void manageBusTest() {
+        AdminRegister adminRegister = new AdminRegister();
+        adminRegister.deleteBus(2);
+        adminRegister.updateBus(1, "APH-999", 45, "Active", 1);
+        adminRegister.addBus("CPH-515", 30, "Active", 3);
+        adminRegister.addBus("CPH-515", 30, "Active", 3);
+        adminRegister.deleteBus(5);
     }
 }
 

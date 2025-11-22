@@ -1,7 +1,10 @@
 package com.metromanage.domain;
 
+import java.lang.reflect.Array;
 import java.sql.Connection;
+import java.util.ArrayList;
 
+import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.DB;
 import com.metromanage.model.PassengerPersistanceHandler;
 
@@ -41,6 +44,30 @@ public class AdminRegister {
             passenger.markDeleted();
         } else {
             System.out.println("Passenger not found.");
+        }
+    }
+
+    public Bus addBus(String licensePlate, int capacity, String status, int routeID) {
+        return new Bus(licensePlate, capacity, status, routeID);
+    }
+
+    public void updateBus(int busID, String licensePlate, int capacity, String status, int routeID) {
+        BusPersistanceHandler bph = new BusPersistanceHandler();
+        Bus bus = (Bus) bph.find(busID);
+        bus.setPlateNumber(licensePlate);
+        bus.setCapacity(capacity);
+        bus.setStatus(status);
+        bus.setRouteID(routeID);
+        bph.save(bus);
+    }
+
+    public void deleteBus(int busID) {
+        BusPersistanceHandler bph = new BusPersistanceHandler();
+        Bus bus = (Bus) bph.find(busID);
+        if (bus != null) {
+            bus.markDeleted();
+        } else {
+            System.out.println("Bus not found.");
         }
     }
 

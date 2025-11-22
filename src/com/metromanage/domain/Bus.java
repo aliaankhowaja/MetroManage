@@ -31,7 +31,8 @@ public class Bus{
     }
 
     public void markDeleted() {
-
+        BusPersistanceHandler bph = new BusPersistanceHandler();
+        bph.delete(this);
     }
     
     public int getBusID() {

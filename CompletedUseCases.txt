@@ -1,7 +1,11 @@
 BE
+UC01 - search passengers remaining
+UC02 - search buses remaining
+
 UC06
 UC07
 UC08
 UC09
 UC10
+
 UC12
