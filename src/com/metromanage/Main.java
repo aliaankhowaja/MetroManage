@@ -10,7 +10,8 @@ public class Main{
         // DB.createTables();
         // generateTestData();
         // loginTest();
-        feedbackTest();
+        // feedbackTest();
+        // balanceTest();
     }
 
     static void generateTestData() {
@@ -75,6 +76,15 @@ public class Main{
         StationRegister feedbackRegister = new StationRegister();
         feedbackRegister.submitFeedback(1, "Complaint", "The bus was late.");
         feedbackRegister.submitFeedback(2, "Suggestion", "Add more buses during peak hours.");
+    }
+
+    static void balanceTest() {
+        StationRegister stationRegister = new StationRegister();
+        float balance = stationRegister.checkBalance(1);
+        System.out.println("Passenger 1 wallet balance: " + balance);
+        balance = stationRegister.checkBalance(7);
+        System.out.println("Passenger 7 wallet balance: " + balance);
+        
     }
 }
 
