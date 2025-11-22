@@ -3,6 +3,7 @@ package com.metromanage;
 import com.metromanage.domain.StationRegister;
 import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
+import com.metromanage.model.DB;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
 import com.metromanage.domain.OperationRegister;
@@ -12,13 +13,14 @@ public class Main{
     public static void main(String[] args) {
         System.out.println("Welcome to MetroManage!");
         // Uses Windows Authentication
-        // DB.createTables();
-        // generateTestData();
-        // loginTest();
-        // feedbackTest();
-        // balanceTest();
-        // manageBusTest();
-        allocateBusTest();
+        //DB.createTables();
+        //generateTestData();
+        //loginTest();
+        //feedbackTest();
+        //balanceTest();
+        //manageBusTest();
+        //allocateBusTest();
+        searchPassengerTest();
     }
 
     static void requestTicketTest() {
@@ -122,6 +124,60 @@ public class Main{
     static void allocateBusTest() {
         OperationRegister operationRegister = new OperationRegister();
         operationRegister.allocateBusToRoute(1, 2);
+    }
+
+    static void searchPassengerTest() {
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
+        
+        //System.out.println("\n=== Testing Passenger Search Functionality ===\n");
+        
+        //Search by partial name
+        System.out.println("1. Searching for 'ali':");
+        java.util.ArrayList<Passenger> results = pph.searchPassengers("ali", false);
+        displaySearchResults(results);
+        
+        //Search by email
+        System.out.println("\n2. Searching for 'gmail':");
+        results = pph.searchPassengers("gmail", false);
+        displaySearchResults(results);
+        
+        //Search by phone
+        System.out.println("\n3. Searching for '555':");
+        results = pph.searchPassengers("555", false);
+        displaySearchResults(results);
+        
+        //Get all passengers
+        System.out.println("\n4. Getting all active passengers:");
+        java.util.ArrayList<Passenger> allPassengers = pph.getAllPassengers();
+        displaySearchResults(allPassengers);
+        
+        //Search with no results
+        System.out.println("\n5. Searching for 'xyz123notfound':");
+        results = pph.searchPassengers("xyz123notfound", false);
+        displaySearchResults(results);
+    }
+    
+    static void displaySearchResults(java.util.ArrayList<Passenger> passengers) {
+        if (passengers.isEmpty()) {
+            System.out.println("   No passengers found.");
+        } else {
+            System.out.println("   Found " + passengers.size() + " passenger(s):");
+            System.out.println("   " + "-".repeat(80));
+            System.out.printf("   %-5s %-20s %-30s %-15s %-10s%n", 
+                "ID", "Name", "Email", "Phone", "Balance");
+            System.out.println("   " + "-".repeat(80));
+            
+            for (Passenger p : passengers) {
+                System.out.printf("   %-5d %-20s %-30s %-15s $%-9.2f%n",
+                    p.getPassengerID(),
+                    p.getName(),
+                    p.getEmail(),
+                    p.getPhoneNumber(),
+                    p.getWalletBalance()
+                );
+            }
+            System.out.println("   " + "-".repeat(80));
+        }
     }
 }
 

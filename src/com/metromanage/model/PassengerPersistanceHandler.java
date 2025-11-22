@@ -114,4 +114,96 @@ public class PassengerPersistanceHandler extends PersistanceHandler {
             return null;
         }
     }
+
+    /**
+     * Search for passengers by name, email, or phone number
+     * @param searchTerm The search string to match against
+     * @param includeDeleted Whether to include passengers with "deleted" status
+     * @return ArrayList of matching Passenger objects
+     */
+    public java.util.ArrayList<Passenger> searchPassengers(String searchTerm, boolean includeDeleted) 
+    {
+        java.util.ArrayList<Passenger> results = new java.util.ArrayList<>();
+
+        String searchPattern = "%" + searchTerm + "%";
+        
+        String searchQuery;
+        if (includeDeleted) 
+        {
+            searchQuery = "SELECT * FROM Passenger WHERE " +
+                         "(name LIKE ? OR email LIKE ? OR phoneNumber LIKE ?) " +
+                         "ORDER BY name";
+        } 
+        else 
+        {
+            searchQuery = "SELECT * FROM Passenger WHERE " +
+                         "(name LIKE ? OR email LIKE ? OR phoneNumber LIKE ?) " +
+                         "AND status != 'deleted' " +
+                         "ORDER BY name";
+        }
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(searchQuery)) 
+        {
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
+            pstmt.setString(3, searchPattern);
+            
+            try (ResultSet rs = pstmt.executeQuery()) 
+            {
+                while (rs.next()) 
+                {
+                    Passenger passenger = new Passenger();
+                    passenger.setPassengerID(rs.getInt("passengerID"));
+                    passenger.setName(rs.getString("name"));
+                    passenger.setEmail(rs.getString("email"));
+                    passenger.setPhoneNumber(rs.getString("phoneNumber"));
+                    passenger.setPasswordHash(rs.getString("passwordHash"));
+                    passenger.setStatus(rs.getString("status"));
+                    passenger.setRegistrationDate(rs.getTimestamp("registrationDate").toLocalDateTime());
+                    passenger.setWalletBalance(rs.getFloat("walletBalance"));
+                    results.add(passenger);
+                }
+            }
+        } catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+        
+        return results;
+    }
+
+    /**
+     * Get all active passengers
+     * @return ArrayList of all Passenger objects with active status
+     */
+    public java.util.ArrayList<Passenger> getAllPassengers()
+    {
+        java.util.ArrayList<Passenger> results = new java.util.ArrayList<>();
+        String query = "SELECT * FROM Passenger WHERE status != 'deleted' ORDER BY name";
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) 
+        {
+            try (ResultSet rs = pstmt.executeQuery()) 
+            {
+                while (rs.next()) 
+                {
+                    Passenger passenger = new Passenger();
+                    passenger.setPassengerID(rs.getInt("passengerID"));
+                    passenger.setName(rs.getString("name"));
+                    passenger.setEmail(rs.getString("email"));
+                    passenger.setPhoneNumber(rs.getString("phoneNumber"));
+                    passenger.setPasswordHash(rs.getString("passwordHash"));
+                    passenger.setStatus(rs.getString("status"));
+                    passenger.setRegistrationDate(rs.getTimestamp("registrationDate").toLocalDateTime());
+                    passenger.setWalletBalance(rs.getFloat("walletBalance"));
+                    results.add(passenger);
+                }
+            }
+        } catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+        
+        return results;
+    }
 }
