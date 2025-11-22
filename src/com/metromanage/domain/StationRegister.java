@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.DB;
+import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.RidePersistanceHandler;
 import com.metromanage.model.TicketPersistanceHandler;
 
@@ -88,6 +89,16 @@ public class StationRegister {
     public void submitFeedback(int passengerID, String type, String comments) {
         Feedback feedback = new Feedback(passengerID, type, comments);
         System.out.println("Feedback submitted successfully with ID: " + feedback.getFeedbackID());
+    }
+    public float checkBalance(int passengerID) {
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
+        Passenger passenger = (Passenger) pph.find(passengerID);
+        if (passenger != null) {
+            return passenger.getWalletBalance();
+        } else {
+            System.out.println("Passenger not found.");
+            return -1;
+        }
     }
     
 }
