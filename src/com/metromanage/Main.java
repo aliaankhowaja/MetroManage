@@ -9,7 +9,8 @@ public class Main{
         // Uses Windows Authentication
         // DB.createTables();
         // generateTestData();
-        loginTest();
+        // loginTest();
+        feedbackTest();
     }
 
     static void generateTestData() {
@@ -67,8 +68,13 @@ public class Main{
         loginHandler.login("Dfsf", "sdfsdf");
         loginHandler.logout();
         loginHandler.login("SDF", "DFs");
-               
 
+    }
+    
+    static void feedbackTest() {
+        StationRegister feedbackRegister = new StationRegister();
+        feedbackRegister.submitFeedback(1, "Complaint", "The bus was late.");
+        feedbackRegister.submitFeedback(2, "Suggestion", "Add more buses during peak hours.");
     }
 }
 

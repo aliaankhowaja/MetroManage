@@ -17,7 +17,7 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
             pstmt.setInt(1, feedback.getPassengerID());
             pstmt.setString(2, feedback.getType());
             pstmt.setString(3, feedback.getComments());
-            pstmt.setString(4, feedback.getTimestamp().toString());
+            pstmt.setTimestamp(4, Timestamp.valueOf(feedback.getTimestamp()));
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Creating bus failed, no rows affected.");
