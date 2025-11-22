@@ -5,6 +5,7 @@ import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
+import com.metromanage.domain.OperationRegister;
 import com.metromanage.domain.Passenger;
 import com.metromanage.domain.Route;
 public class Main{
@@ -17,6 +18,7 @@ public class Main{
         // feedbackTest();
         // balanceTest();
         // manageBusTest();
+        allocateBusTest();
     }
 
     static void requestTicketTest() {
@@ -115,6 +117,11 @@ public class Main{
         adminRegister.addBus("CPH-515", 30, "Active", 3);
         adminRegister.addBus("CPH-515", 30, "Active", 3);
         adminRegister.deleteBus(5);
+    }
+
+    static void allocateBusTest() {
+        OperationRegister operationRegister = new OperationRegister();
+        operationRegister.allocateBusToRoute(1, 2);
     }
 }
 

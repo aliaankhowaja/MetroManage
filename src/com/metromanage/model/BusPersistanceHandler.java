@@ -2,6 +2,7 @@ package com.metromanage.model;
 
 import com.metromanage.domain.Bus;
 import java.sql.*;
+import java.util.ArrayList;
 
 public class BusPersistanceHandler extends PersistanceHandler {
 
@@ -78,5 +79,48 @@ public class BusPersistanceHandler extends PersistanceHandler {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public ArrayList<Bus> getBusesByRoute(int routeID) {
+        String query = "Select * From Bus Where routeID = ?";
+        ArrayList<Bus> buses = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            pstmt.setInt(1, routeID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    buses.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return buses;
+    }
+
+    public ArrayList<Bus> getFreeBuses() {
+        String query = "Select * From Bus Where routeID IS NULL or routeID = 0";
+        ArrayList<Bus> buses = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    buses.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return buses;
     }
 }

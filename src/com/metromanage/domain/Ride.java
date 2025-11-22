@@ -1,6 +1,5 @@
 package com.metromanage.domain;
 
-import java.sql.Connection;
 import java.time.LocalDateTime;
 
 import com.metromanage.model.RidePersistanceHandler;
