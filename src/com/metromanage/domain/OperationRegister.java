@@ -39,4 +39,8 @@ public class OperationRegister {
         return bph.getBusesByRoute(routeId);
     }
 
+    public ArrayList<BoardingTotal> getPeakHours(int stationID){
+        StationPersistanceHandler sph = new StationPersistanceHandler();
+        return sph.getBoardingTotalsByHour(stationID);
+    }
 }
