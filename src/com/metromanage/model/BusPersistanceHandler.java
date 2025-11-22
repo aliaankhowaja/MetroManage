@@ -123,4 +123,76 @@ public class BusPersistanceHandler extends PersistanceHandler {
         }
         return buses;
     }
+
+    /**
+     * Search for buses by plate number or status
+     * @param searchTerm The search string to match against
+     * @param includeDeleted Whether to include buses with "Deleted" status
+     * @return ArrayList of matching Bus objects
+     */
+    public ArrayList<Bus> searchBuses(String searchTerm, boolean includeDeleted) {
+        ArrayList<Bus> results = new ArrayList<>();
+        String searchPattern = "%" + searchTerm + "%";
+        
+        String searchQuery;
+        if (includeDeleted) {
+            searchQuery = "SELECT * FROM Bus WHERE " +
+                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "ORDER BY plateNumber";
+        } else {
+            searchQuery = "SELECT * FROM Bus WHERE " +
+                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "AND status != 'Deleted' " +
+                         "ORDER BY plateNumber";
+        }
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(searchQuery)) {
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
+            pstmt.setString(3, searchPattern);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    results.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return results;
+    }
+
+    /**
+     * Get all active buses
+     * @return ArrayList of all Bus objects with non-deleted status
+     */
+    public ArrayList<Bus> getAllBuses() {
+        ArrayList<Bus> results = new ArrayList<>();
+        String query = "SELECT * FROM Bus WHERE status != 'Deleted' ORDER BY plateNumber";
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    results.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return results;
+    }
 }

@@ -2,12 +2,14 @@ package com.metromanage;
 
 import com.metromanage.domain.StationRegister;
 import com.metromanage.model.PassengerPersistanceHandler;
+import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.model.DB;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
 import com.metromanage.domain.OperationRegister;
 import com.metromanage.domain.Passenger;
+import com.metromanage.domain.Bus;
 import com.metromanage.domain.Route;
 public class Main{
     public static void main(String[] args) {
@@ -21,6 +23,7 @@ public class Main{
         //manageBusTest();
         //allocateBusTest();
         searchPassengerTest();
+        searchBusTest();
     }
 
     static void requestTicketTest() {
@@ -128,9 +131,7 @@ public class Main{
 
     static void searchPassengerTest() {
         PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
-        
-        //System.out.println("\n=== Testing Passenger Search Functionality ===\n");
-        
+               
         //Search by partial name
         System.out.println("1. Searching for 'ali':");
         java.util.ArrayList<Passenger> results = pph.searchPassengers("ali", false);
@@ -177,6 +178,58 @@ public class Main{
                 );
             }
             System.out.println("   " + "-".repeat(80));
+        }
+    }
+
+    static void searchBusTest() {
+        BusPersistanceHandler bph = new BusPersistanceHandler();
+        
+        // Search by plate number
+        System.out.println("1. Searching for 'APH':");
+        java.util.ArrayList<Bus> results = bph.searchBuses("APH", false);
+        displayBusSearchResults(results);
+        
+        // Search by status
+        System.out.println("\n2. Searching for 'Active':");
+        results = bph.searchBuses("Active", false);
+        displayBusSearchResults(results);
+        
+        // Search by capacity
+        System.out.println("\n3. Searching for '40':");
+        results = bph.searchBuses("40", false);
+        displayBusSearchResults(results);
+        
+        // Get all buses
+        System.out.println("\n4. Getting all active buses:");
+        java.util.ArrayList<Bus> allBuses = bph.getAllBuses();
+        displayBusSearchResults(allBuses);
+        
+        // Search with no results
+        System.out.println("\n5. Searching for 'XYZ999':");
+        results = bph.searchBuses("XYZ999", false);
+        displayBusSearchResults(results);
+    }
+    
+    static void displayBusSearchResults(java.util.ArrayList<Bus> buses) {
+        if (buses.isEmpty()) {
+            System.out.println("   No buses found.");
+        } else {
+            System.out.println("   Found " + buses.size() + " bus(es):");
+            System.out.println("   " + "-".repeat(70));
+            System.out.printf("   %-5s %-15s %-10s %-15s %-10s%n", 
+                "ID", "Plate Number", "Capacity", "Status", "Route ID");
+            System.out.println("   " + "-".repeat(70));
+            
+            for (Bus b : buses) {
+                System.out.printf("   %-5d %-15s %-10d %-15s %-10d%n",
+                    b.getBusID(),
+                    b.getPlateNumber(),
+                    b.getCapacity(),
+                    b.getStatus(),
+                    b.getRouteID()
+                );
+            }
+            System.out.println("   " + "-".repeat(70));
         }
     }
 }
