@@ -14,31 +14,38 @@ public class Ride{
     private LocalDateTime arrivalTime;
     private boolean isActive;
 
+    private int boardingStationID;
+    private int arrivalStationID;
+
     public Ride() {
 
     }
 
-    public Ride(Route route, Ticket ticket) {
+    public Ride(Route route, Ticket ticket, int boardingStationID, int arrivalStationID) {
         this.rideID = ticket.getTicketID();
         this.route = route;
         this.ticket = ticket;
+        this.boardingStationID = boardingStationID;
+        this.arrivalStationID = arrivalStationID;
         this.isActive = true;
         RidePersistanceHandler rph = new RidePersistanceHandler();
         this.rideID = rph.save(this);
     }
 
     public Ride(Route route, Ticket ticket, LocalDateTime boardingTime, LocalDateTime arrivalTime,
-            Connection connection) {
+            int boardingStationID, int arrivalStationID) {
         this.rideID = ticket.getTicketID();
         this.route = route;
         this.ticket = ticket;
         this.boardingTime = boardingTime;
         this.arrivalTime = arrivalTime;
+        this.boardingStationID = boardingStationID;
+        this.arrivalStationID = arrivalStationID;
         this.isActive = true;
     }
 
     public Ride(Route route, Bus bus, Ticket ticket, LocalDateTime boardingTime, LocalDateTime arrivalTime,
-            Connection connection) {
+            int boardingStationID, int arrivalStationID) {
         
                 this.rideID = ticket.getTicketID();
         this.route = route;
@@ -46,6 +53,8 @@ public class Ride{
         this.ticket = ticket;
         this.boardingTime = boardingTime;
         this.arrivalTime = arrivalTime;
+        this.boardingStationID = boardingStationID;
+        this.arrivalStationID = arrivalStationID;
         this.isActive = true;
     }
     
@@ -79,6 +88,22 @@ public class Ride{
     
     public void endRide() {
         this.isActive = false;
+    }
+
+    public int getBoardingStationID() {
+        return boardingStationID;
+    }
+
+    public void setBoardingStationID(int boardingStationID) {
+        this.boardingStationID = boardingStationID;
+    }
+
+    public int getArrivalStationID() {
+        return arrivalStationID;
+    }
+
+    public void setArrivalStationID(int arrivalStationID) {
+        this.arrivalStationID = arrivalStationID;
     }
 
     public void setRideID(int rideID) {

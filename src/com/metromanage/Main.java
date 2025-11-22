@@ -1,8 +1,12 @@
 package com.metromanage;
 
 import com.metromanage.domain.StationRegister;
+import com.metromanage.model.PassengerPersistanceHandler;
+import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
+import com.metromanage.domain.Passenger;
+import com.metromanage.domain.Route;
 public class Main{
     public static void main(String[] args) {
         System.out.println("Welcome to MetroManage!");
@@ -12,7 +16,19 @@ public class Main{
         // loginTest();
         // feedbackTest();
         // balanceTest();
-        manageBusTest();
+        // manageBusTest();
+    }
+
+    static void requestTicketTest() {
+        StationRegister stationRegister = new StationRegister();
+        PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
+        RoutePersistanceHandler rph = new RoutePersistanceHandler();
+        Route route1 = (Route) rph.find(1);
+        
+        Passenger passenger = (Passenger) pph.find(5);
+        stationRegister.requestTicket(route1, "Wallet", passenger, "", 1);
+
+        
     }
 
     static void generateTestData() {
@@ -63,6 +79,8 @@ public class Main{
 
     }
     
+
+
     static void loginTest() {
         LoginHandler loginHandler = new LoginHandler();
         loginHandler.logout();
@@ -88,6 +106,8 @@ public class Main{
 
     }
     
+
+
     static void manageBusTest() {
         AdminRegister adminRegister = new AdminRegister();
         adminRegister.deleteBus(2);

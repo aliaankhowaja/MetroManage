@@ -17,7 +17,7 @@ public class RidePersistanceHandler extends PersistanceHandler {
         
         Ride ride = (Ride) obj;
         int id = ride.getRideID();
-        String saveQuery = "update ride set routeID = ?, busID = ?, boardingTime = ?, arrivalTime = ?, isActive = ? where id = ?";
+        String saveQuery = "update ride set routeID = ?, busID = ?, boardingTime = ?, arrivalTime = ?, isActive = ?, boardingStationID = ?, arrivalStationID = ? where id = ?";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(saveQuery, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, ride.getRoute().getRouteID());
             if(ride.getBus() != null) {
@@ -36,7 +36,17 @@ public class RidePersistanceHandler extends PersistanceHandler {
                 pstmt.setNull(4, Types.TIMESTAMP);
             }
             pstmt.setBoolean(5, ride.isActive());
-            pstmt.setLong(6, id);
+            if(ride.getBoardingStationID() != 0) {
+                pstmt.setInt(6, ride.getBoardingStationID());
+            } else {
+                pstmt.setNull(6, Types.INTEGER);
+            }
+            if(ride.getArrivalStationID() != 0) {
+                pstmt.setInt(7, ride.getArrivalStationID());
+            } else {
+                pstmt.setNull(7, Types.INTEGER);
+            }
+            pstmt.setLong(8, id);
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
                 throw new SQLException("Creating ticket failed, no rows affected.");
@@ -72,13 +82,25 @@ public class RidePersistanceHandler extends PersistanceHandler {
                     ride.setRoute(route);
                     Bus bus = null;
                     int busId = rs.getInt("busID");
-                    if(!rs.wasNull()) {
+                    if (!rs.wasNull()) {
                         bus = (Bus) new BusPersistanceHandler().find((int) busId);
                     }
                     ride.setBus(bus);
-                    ride.setBoardingTime(rs.getTimestamp("boardingTime") != null ? rs.getTimestamp("boardingTime").toLocalDateTime() : null);
-                    ride.setArrivalTime(rs.getTimestamp("arrivalTime") != null ? rs.getTimestamp("arrivalTime").toLocalDateTime() : null);
+                    ride.setBoardingTime(
+                            rs.getTimestamp("boardingTime") != null ? rs.getTimestamp("boardingTime").toLocalDateTime()
+                                    : null);
+                    ride.setArrivalTime(
+                            rs.getTimestamp("arrivalTime") != null ? rs.getTimestamp("arrivalTime").toLocalDateTime()
+                                    : null);
                     ride.setActive(rs.getBoolean("isActive"));
+                    int boardingStationID = rs.getInt("boardingStationID");
+                    if (!rs.wasNull()) {
+                        ride.setBoardingStationID(boardingStationID);
+                    }
+                    int arrivalStationID = rs.getInt("arrivalStationID");
+                    if (!rs.wasNull()) {
+                        ride.setArrivalStationID(arrivalStationID);
+                    }
                     Ticket ticket = (Ticket) new TicketPersistanceHandler().find(rs.getInt("id"));
                     ride.setTicket(ticket);
                     return ride;
@@ -86,10 +108,11 @@ public class RidePersistanceHandler extends PersistanceHandler {
                     return null;
                 }
             }
-            
+
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
     }
+    
 }
