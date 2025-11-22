@@ -12,11 +12,12 @@ public class Main{
         // loginTest();
         // feedbackTest();
         // balanceTest();
+        manageBusTest();
     }
 
     static void generateTestData() {
-        StationRegister stationRegister = new StationRegister();
-        AdminRegister adminRegister = new AdminRegister();
+        // StationRegister stationRegister = new StationRegister();
+        // AdminRegister adminRegister = new AdminRegister();
         // Station station1 = new Station("Central Station", 40.7128f, -74.0060f, "Active", DB.getConnection());
         // Station station2 = new Station("West End", 40.7138f, -74.0160f, "Active", DB.getConnection());
         // Station station3 = new Station("East Side", 40.7228f, -74.0010f, "Active", DB.getConnection());
@@ -84,7 +85,16 @@ public class Main{
         System.out.println("Passenger 1 wallet balance: " + balance);
         balance = stationRegister.checkBalance(7);
         System.out.println("Passenger 7 wallet balance: " + balance);
-        
+
+    }
+    
+    static void manageBusTest() {
+        AdminRegister adminRegister = new AdminRegister();
+        adminRegister.deleteBus(2);
+        adminRegister.updateBus(1, "APH-999", 45, "Active", 1);
+        adminRegister.addBus("CPH-515", 30, "Active", 3);
+        adminRegister.addBus("CPH-515", 30, "Active", 3);
+        adminRegister.deleteBus(5);
     }
 }
 
