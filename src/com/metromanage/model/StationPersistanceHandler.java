@@ -1,7 +1,9 @@
 package com.metromanage.model;
 
+import com.metromanage.domain.BoardingTotal;
 import com.metromanage.domain.Station;
 import java.sql.*;
+import java.util.ArrayList;
 
 public class StationPersistanceHandler extends PersistanceHandler {
 
@@ -64,4 +66,185 @@ public class StationPersistanceHandler extends PersistanceHandler {
             return null;
         }
     }
+
+    public BoardingTotal getBoardingTotalsByDay(int stationID) {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, DAY(rid.boardingTime) AS day, MONTH(rid.boardingTime) AS month "
+                +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "WHERE rid.boardingStationID = ? " +
+                "GROUP BY day, month, s.name, r.name";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            pstmt.setInt(1, stationID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            rs.getInt("day"),
+                            rs.getInt("month"),
+                            rs.getInt("year"));
+                    return bt;
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public BoardingTotal getBoardingTotalsByMonth(int stationID) {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, MONTH(rid.boardingTime) AS month, YEAR(rid.boardingTime) AS year "
+                +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "WHERE rid.boardingStationID = ? " +
+                "GROUP BY month, year, s.name, r.name";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            pstmt.setInt(1, stationID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            0,
+                            rs.getInt("month"),
+                            rs.getInt("year"));
+                    return bt;
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public BoardingTotal getBoardingTotalsByYear(int stationID) {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, YEAR(rid.boardingTime) AS year "
+                +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "WHERE rid.boardingStationID = ? " +
+                "GROUP BY year, s.name, r.name";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            pstmt.setInt(1, stationID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            0,
+                            0,
+                            rs.getInt("year"));
+                    return bt;
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ArrayList<BoardingTotal> getBoardingTotalsByDay() {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, DAY(rid.boardingTime) AS day, MONTH(rid.boardingTime) AS month " +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "GROUP BY day, month, s.name, r.name";
+        ArrayList<BoardingTotal> boardingTotals = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            rs.getInt("day"),
+                            rs.getInt("month"),
+                            0);
+                    boardingTotals.add(bt);
+                }
+                return boardingTotals;
+            } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }} catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public ArrayList<BoardingTotal> getBoardingTotalsByMonth() {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, MONTH(rid.boardingTime) AS month, YEAR(rid.boardingTime) AS year "
+                +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "GROUP BY month, year, s.name, r.name";
+        ArrayList<BoardingTotal> boardingTotals = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            0,
+                            rs.getInt("month"),
+                            rs.getInt("year"));
+                    boardingTotals.add(bt);
+                }
+                return boardingTotals;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public ArrayList<BoardingTotal> getBoardingTotalsByYear() {
+        String query = "SELECT s.name AS stationName, r.name AS routeName, COUNT(*) AS totalBoardings, YEAR(rid.boardingTime) AS year "
+                +
+                "FROM Ride rid " +
+                "JOIN Route r ON rid.routeID = r.routeID " +
+                "JOIN Station s ON rid.boardingStationID = s.stationID " +
+                "GROUP BY year, s.name, r.name";
+        ArrayList<BoardingTotal> boardingTotals = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
+                    BoardingTotal bt = new BoardingTotal(
+                            rs.getString("stationName"),
+                            rs.getString("routeName"),
+                            rs.getInt("totalBoardings"),
+                            0,
+                            0,
+                            rs.getInt("year"));
+                    boardingTotals.add(bt);
+                }
+                return boardingTotals;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 }

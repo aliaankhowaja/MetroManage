@@ -37,7 +37,7 @@ public class DB {
             Station(id, name, latitude, longitude, status)  
         */
 
-        String createRideTable = "CREATE TABLE ride (id INT PRIMARY KEY IDENTITY(1,1), ticketIssueTime DATETIME, ticketExpiryTime DATETIME, ticketStatus VARCHAR(50), paymentID INT, routeID INT, busID INT, boardingTime DATETIME, arrivalTime DATETIME, isActive BIT)";
+        String createRideTable = "CREATE TABLE ride (id INT PRIMARY KEY IDENTITY(1,1), ticketIssueTime DATETIME, ticketExpiryTime DATETIME, ticketStatus VARCHAR(50), paymentID INT, routeID INT, busID INT, boardingTime DATETIME, arrivalTime DATETIME, isActive BIT, boardingStationID INT, arrivalStationID INT)";
         String createRouteTable = "CREATE TABLE route (id INT PRIMARY KEY IDENTITY(1,1), routeName VARCHAR(100), totalDistance FLOAT, estimatedTime INT, isActive BIT, cost FLOAT)";
         String createPaymentTable = "CREATE TABLE payment (id INT PRIMARY KEY IDENTITY(1,1), PassengerID INT, Amount FLOAT, PaymentDate DATETIME, CardNumber VARCHAR(20), CardHolderName VARCHAR(100), CardExpiryDate VARCHAR(10), PaymentType VARCHAR(50))";
         String createBusTable = "CREATE TABLE bus (id INT PRIMARY KEY IDENTITY(1,1), plateNumber VARCHAR(20), capacity INT, status VARCHAR(50), routeID INT)";
