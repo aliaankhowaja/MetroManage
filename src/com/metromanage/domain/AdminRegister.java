@@ -1,8 +1,6 @@
 package com.metromanage.domain;
 
-import java.lang.reflect.Array;
 import java.sql.Connection;
-import java.util.ArrayList;
 
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.DB;
