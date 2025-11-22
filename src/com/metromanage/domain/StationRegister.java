@@ -62,6 +62,7 @@ public class StationRegister {
         tph.save(ticket);
         System.out.println("Check-in successful for Ticket ID: " + ticketId + " on Bus ID: " + busId);
     }
+
     public void checkOut(int ticketId) {
         TicketPersistanceHandler tph = new TicketPersistanceHandler();
         Ticket ticket = (Ticket) tph.find(ticketId);
@@ -76,15 +77,17 @@ public class StationRegister {
             System.out.println("Ticket is not valid for checkout. Check-out failed.");
             return;
         }
-        
-
-        
 
         LocalDateTime now = LocalDateTime.now();
         ride.setArrivalTime(now);
         ride.setActive(false);
         rph.save(ride);
         System.out.println("Check-out successful for Ticket ID: " + ticketId);
+    }
+    
+    public void submitFeedback(int passengerID, String type, String comments) {
+        Feedback feedback = new Feedback(passengerID, type, comments);
+        System.out.println("Feedback submitted successfully with ID: " + feedback.getFeedbackID());
     }
     
 }
