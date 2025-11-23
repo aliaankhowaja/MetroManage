@@ -224,21 +224,22 @@ public class Main{
         } else {
             System.out.println("   Found " + buses.size() + " bus(es):");
             System.out.println("   " + "-".repeat(70));
-            System.out.printf("   %-5s %-15s %-10s %-15s %-10s%n", 
-                "ID", "Plate Number", "Capacity", "Status", "Route ID");
+            System.out.printf("   %-5s %-15s %-10s %-15s %-10s%n",
+                    "ID", "Plate Number", "Capacity", "Status", "Route ID");
             System.out.println("   " + "-".repeat(70));
-            
+
             for (Bus b : buses) {
                 System.out.printf("   %-5d %-15s %-10d %-15s %-10d%n",
-                    b.getBusID(),
-                    b.getPlateNumber(),
-                    b.getCapacity(),
-                    b.getStatus(),
-                    b.getRouteID()
-                );
+                        b.getBusID(),
+                        b.getPlateNumber(),
+                        b.getCapacity(),
+                        b.getStatus(),
+                        b.getRouteID());
             }
             System.out.println("   " + "-".repeat(70));
         }
+    }
+
     static void scheduleTest() {
         OperationRegister operationRegister = new OperationRegister();
         int interval = operationRegister.getSchedule(2);

@@ -145,4 +145,64 @@ public class BusPersistanceHandler extends PersistanceHandler {
         }
         return buses;
     }
+
+        public ArrayList<Bus> getAllBuses() {
+        String query = "Select * From Bus Where status != 'Deleted'";
+        ArrayList<Bus> buses = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    buses.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return buses;
+    }
+
+    public ArrayList<Bus> searchBuses(String searchTerm, boolean includeDeleted) {
+        ArrayList<Bus> results = new ArrayList<>();
+        String searchPattern = "%" + searchTerm + "%";
+        
+        String searchQuery;
+        if (includeDeleted) {
+            searchQuery = "SELECT * FROM Bus WHERE " +
+                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "ORDER BY plateNumber";
+        } else {
+            searchQuery = "SELECT * FROM Bus WHERE " +
+                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "AND status != 'Deleted' " +
+                         "ORDER BY plateNumber";
+        }
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(searchQuery)) {
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
+            pstmt.setString(3, searchPattern);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Bus bus = new Bus();
+                    bus.setBusID(rs.getInt("id"));
+                    bus.setPlateNumber(rs.getString("plateNumber"));
+                    bus.setCapacity(rs.getInt("capacity"));
+                    bus.setStatus(rs.getString("status"));
+                    bus.setRouteID(rs.getInt("routeID"));
+                    results.add(bus);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return results;
+    }
 }
