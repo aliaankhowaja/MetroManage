@@ -141,4 +141,53 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
         }
         return 0;
     }
+    
+    /**
+     * Get feedback with passenger information
+     */
+    public ArrayList<FeedbackWithPassenger> getFeedbackWithPassengerInfo() {
+        ArrayList<FeedbackWithPassenger> feedbackList = new ArrayList<>();
+        String query = "SELECT f.id, f.passengerID, f.type, f.comments, f.timestamp, " +
+                      "p.name as passengerName, p.email as passengerEmail " +
+                      "FROM Feedback f " +
+                      "LEFT JOIN Passenger p ON f.passengerID = p.id " +
+                      "ORDER BY f.timestamp DESC";
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    FeedbackWithPassenger feedback = new FeedbackWithPassenger();
+                    feedback.feedbackID = rs.getInt("id");
+                    feedback.passengerID = rs.getInt("passengerID");
+                    feedback.type = rs.getString("type");
+                    feedback.comments = rs.getString("comments");
+                    feedback.passengerName = rs.getString("passengerName");
+                    feedback.passengerEmail = rs.getString("passengerEmail");
+                    
+                    Timestamp ts = rs.getTimestamp("timestamp");
+                    if (ts != null) {
+                        feedback.timestamp = ts.toLocalDateTime();
+                    }
+                    feedbackList.add(feedback);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return feedbackList;
+    }
+    
+    /**
+     * Inner class to hold feedback with passenger information
+     */
+    public static class FeedbackWithPassenger {
+        public int feedbackID;
+        public int passengerID;
+        public String type;
+        public String comments;
+        public java.time.LocalDateTime timestamp;
+        public String passengerName;
+        public String passengerEmail;
+    }
 }

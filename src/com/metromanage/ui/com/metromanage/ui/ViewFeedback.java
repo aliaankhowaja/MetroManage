@@ -26,8 +26,8 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import com.metromanage.domain.Feedback;
 import com.metromanage.model.FeedbackPersistanceHandler;
+import com.metromanage.model.FeedbackPersistanceHandler.FeedbackWithPassenger;
 
 /**
  * Admin feedback dashboard connected to database.
@@ -891,30 +891,74 @@ public class ViewFeedback extends JFrame {
     }
 
     private void loadFeedbackFromDatabase() {
-        // Load feedback from database
-        ArrayList<Feedback> dbFeedbackList = feedbackPersistanceHandler.getAllFeedback();
+        // Load feedback with passenger information from database
+        ArrayList<FeedbackWithPassenger> dbFeedbackList = feedbackPersistanceHandler.getFeedbackWithPassengerInfo();
         
         // Convert database feedback to FeedbackEntry format
         int rideCounter = 1;
-        for (Feedback feedback : dbFeedbackList) {
+        for (FeedbackWithPassenger feedback : dbFeedbackList) {
             // Map feedback type to labels and rating
             List<String> labels = new ArrayList<>();
             int rating = 3; // Default rating
             
-            String type = feedback.getType();
+            String type = feedback.type;
             if (type != null) {
                 if (type.equalsIgnoreCase("Complaint")) {
                     labels.add("Complaint");
                     rating = 2; // Complaints usually indicate lower satisfaction
+                    
+                    // Analyze comments for additional labels
+                    String comments = feedback.comments != null ? feedback.comments.toLowerCase() : "";
+                    if (comments.contains("crowd") || comments.contains("overcrowd")) {
+                        labels.add("Overcrowding");
+                    } else if (comments.contains("delay") || comments.contains("late")) {
+                        labels.add("Delays");
+                    } else if (comments.contains("clean") || comments.contains("dirty")) {
+                        labels.add("Cleanliness");
+                    } else if (comments.contains("ticket") || comments.contains("machine") || comments.contains("charged")) {
+                        labels.add("Ticketing");
+                    } else if (comments.contains("peak") || comments.contains("vehicle")) {
+                        labels.add("Service Frequency");
+                    }
+                    
                 } else if (type.equalsIgnoreCase("Suggestion")) {
                     labels.add("Suggestion");
                     rating = 3; // Suggestions are neutral
+                    
+                    String comments = feedback.comments != null ? feedback.comments.toLowerCase() : "";
+                    if (comments.contains("evening") || comments.contains("schedule")) {
+                        labels.add("Scheduling");
+                    } else if (comments.contains("map") || comments.contains("stop")) {
+                        labels.add("Information");
+                    } else if (comments.contains("wheelchair") || comments.contains("ramp") || comments.contains("accessible")) {
+                        labels.add("Accessibility");
+                    }
+                    
                 } else if (type.equalsIgnoreCase("Compliment") || type.equalsIgnoreCase("Praise")) {
-                    labels.add("Compliment");
+                    labels.add("Praise");
                     rating = 5; // Compliments indicate high satisfaction
-                } else {
+                    
+                    String comments = feedback.comments != null ? feedback.comments.toLowerCase() : "";
+                    if (comments.contains("driver") || comments.contains("conductor")) {
+                        labels.add("Staff");
+                    } else if (comments.contains("clean")) {
+                        labels.add("Cleanliness");
+                    } else if (comments.contains("time") || comments.contains("punctual")) {
+                        labels.add("Punctuality");
+                    } else if (comments.contains("app") || comments.contains("payment")) {
+                        labels.add("Technology");
+                    }
+                    
+                } else if (type.equalsIgnoreCase("Other")) {
                     labels.add("Other");
                     rating = 3;
+                    
+                    String comments = feedback.comments != null ? feedback.comments.toLowerCase() : "";
+                    if (comments.contains("lost") || comments.contains("found")) {
+                        labels.add("Lost & Found");
+                    }
+                } else {
+                    labels.add("Other");
                 }
             } else {
                 labels.add("Other");
@@ -922,12 +966,16 @@ public class ViewFeedback extends JFrame {
             
             // Generate synthetic ride/route/bus data (since not in current DB schema)
             String rideId = "R-" + String.format("%03d", rideCounter++);
-            String routeId = "R" + (1 + (feedback.getPassengerID() % 7)); // Distribute across routes
-            String busId = "Bus-" + String.format("%02d", 1 + (feedback.getPassengerID() % 20));
-            String userId = "USER" + feedback.getPassengerID();
+            String routeId = "R" + (1 + (feedback.passengerID % 7)); // Distribute across routes
+            String busId = "Bus-" + String.format("%02d", 1 + (feedback.passengerID % 20));
             
-            LocalDateTime timestamp = feedback.getTimestamp() != null ? 
-                feedback.getTimestamp() : LocalDateTime.now();
+            // Use real passenger name or email
+            String userId = feedback.passengerName != null ? feedback.passengerName : 
+                           (feedback.passengerEmail != null ? feedback.passengerEmail : 
+                           "USER" + feedback.passengerID);
+            
+            LocalDateTime timestamp = feedback.timestamp != null ? 
+                feedback.timestamp : LocalDateTime.now();
             String departureTime = timestamp.format(DateTimeFormatter.ofPattern("HH:mm"));
             
             FeedbackEntry entry = new FeedbackEntry(
@@ -937,7 +985,7 @@ public class ViewFeedback extends JFrame {
                 userId,
                 rating,
                 labels,
-                feedback.getComments() != null ? feedback.getComments() : "No comment",
+                feedback.comments != null ? feedback.comments : "No comment",
                 timestamp,
                 departureTime
             );
@@ -945,12 +993,13 @@ public class ViewFeedback extends JFrame {
             allFeedbackEntries.add(entry);
         }
         
-        // If no feedback in database, keep some sample data for demonstration
+        // If no feedback in database, show helpful message
         if (allFeedbackEntries.isEmpty()) {
             LocalDateTime now = LocalDateTime.now();
-            allFeedbackEntries.add(new FeedbackEntry("R-101", "R1", "Bus-12", "USER1234", 2,
-                Arrays.asList("Complaint", "Overcrowding"),
-                    "No feedback in database yet. Add feedback to see real data here.", now.minusHours(2), "06:30"));
+            allFeedbackEntries.add(new FeedbackEntry("N/A", "N/A", "N/A", "SYSTEM", 3,
+                Arrays.asList("Other"),
+                    "No feedback in database yet. Feedback submitted by passengers will appear here.", 
+                    now, "00:00"));
         }
     }
 
