@@ -1,7 +1,6 @@
 package com.metromanage.ui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
@@ -10,6 +9,12 @@ import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+
+import com.metromanage.domain.Bus;
+import com.metromanage.domain.Route;
+import com.metromanage.domain.OperationRegister;
+import com.metromanage.model.BusPersistanceHandler;
+import com.metromanage.model.RoutePersistanceHandler;
 
 /**
  * BusAllocation screen for MetroManage application.
@@ -76,8 +81,8 @@ public class BusAllocation extends JFrame {
     private JLabel lblUnallocatedBusesValue;
     
     // Control components
-    private JComboBox<String> cmbRoute;
-    private JComboBox<String> cmbBus;
+    private JComboBox<ComboBoxItem> cmbRoute;
+    private JComboBox<ComboBoxItem> cmbBus;
     private JButton btnAllocateBus;
     private JButton btnDeallocateBus;
     private JButton btnRecalculateDelayIndex;
@@ -94,18 +99,28 @@ public class BusAllocation extends JFrame {
     private JPanel navBoardingTotals;
     private JPanel navBusAllocation;
     
-    // Mock data structures
-    private List<Bus> buses;
-    private List<Route> routes;
-    private Map<String, String> busRouteAllocations; // busId -> routeNumber
-    private Map<String, Double> routeDelayIndexes; // routeNumber -> delayIndex
+    // Data structures
+    private ArrayList<Bus> buses;
+    private ArrayList<Route> routes;
+    private Map<Integer, Integer> busRouteAllocations; // busID -> routeID
+    private Map<Integer, Double> routeDelayIndexes; // routeID -> delayIndex
+    
+    // Backend handlers
+    private OperationRegister operationRegister;
+    private BusPersistanceHandler busPersistanceHandler;
+    private RoutePersistanceHandler routePersistanceHandler;
     
     // Timer for automatic delay index recalculation
     private javax.swing.Timer delayIndexTimer;
     
     public BusAllocation() {
+        // Initialize backend handlers
+        operationRegister = new OperationRegister();
+        busPersistanceHandler = new BusPersistanceHandler();
+        routePersistanceHandler = new RoutePersistanceHandler();
+        
         initializeUI();
-        loadMockData();
+        loadRealData();
         startDelayIndexTimer();
     }
 
@@ -424,7 +439,7 @@ public class BusAllocation extends JFrame {
         gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(lblBus, gbc);
         
-        cmbBus = new JComboBox<>();
+        cmbBus = new JComboBox<ComboBoxItem>();
         cmbBus.setFont(getCustomFont(Font.PLAIN, 14));
         cmbBus.setPreferredSize(new Dimension(350, 40));
         gbc.gridx = 1;
@@ -443,7 +458,7 @@ public class BusAllocation extends JFrame {
         gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(lblRoute, gbc);
         
-        cmbRoute = new JComboBox<>();
+        cmbRoute = new JComboBox<ComboBoxItem>();
         cmbRoute.setFont(getCustomFont(Font.PLAIN, 14));
         cmbRoute.setPreferredSize(new Dimension(350, 40));
         gbc.gridx = 1;
@@ -547,42 +562,50 @@ public class BusAllocation extends JFrame {
         pnlTableCard.add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void loadMockData() {
+    private void loadRealData() {
         buses = new ArrayList<>();
         routes = new ArrayList<>();
         busRouteAllocations = new HashMap<>();
         routeDelayIndexes = new HashMap<>();
 
-        // Create mock buses (B001 to B080)
-        for (int i = 1; i <= 80; i++) {
-            String busId = String.format("B%03d", i);
-            buses.add(new Bus(busId, i <= 60 ? "Allocated" : "Unallocated"));
+        // Load buses from database
+        buses = busPersistanceHandler.getAllBuses();
+        if (buses == null) {
+            buses = new ArrayList<>();
         }
 
-        // Create mock routes (R1 to R10)
-        for (int i = 1; i <= 10; i++) {
-            String routeNumber = "R" + i;
-            routes.add(new Route(routeNumber, "Route " + i + " Description"));
-            routeDelayIndexes.put(routeNumber, 0.0);
+        // Load routes from database
+        routes = routePersistanceHandler.getAllRoutes();
+        if (routes == null) {
+            routes = new ArrayList<>();
         }
 
-        // Create mock allocations
-        Random random = new Random(42);
-        for (int i = 1; i <= 60; i++) {
-            String busId = String.format("B%03d", i);
-            String routeNumber = "R" + (random.nextInt(10) + 1);
-            busRouteAllocations.put(busId, routeNumber);
-        }
-
-        // Populate combo boxes
-        cmbRoute.addItem("-- Select Route --");
-        for (Route route : routes) {
-            cmbRoute.addItem(route.routeNumber);
-        }
-
-        cmbBus.addItem("-- Select Bus --");
+        // Initialize allocations map from database
         for (Bus bus : buses) {
-            cmbBus.addItem(bus.busId);
+            int routeID = bus.getRouteID();
+            if (routeID != 0) {
+                busRouteAllocations.put(bus.getBusID(), routeID);
+            }
+        }
+
+        // Initialize delay indexes for all routes
+        for (Route route : routes) {
+            routeDelayIndexes.put(route.getRouteID(), 0.0);
+        }
+
+        // Populate combo boxes with formatted display strings
+        cmbRoute.removeAllItems();
+        cmbRoute.addItem(new ComboBoxItem(0, "-- Select Route --"));
+        for (Route route : routes) {
+            String displayText = String.format("R%d - %s", route.getRouteID(), route.getRouteName());
+            cmbRoute.addItem(new ComboBoxItem(route.getRouteID(), displayText));
+        }
+
+        cmbBus.removeAllItems();
+        cmbBus.addItem(new ComboBoxItem(0, "-- Select Bus --"));
+        for (Bus bus : buses) {
+            String displayText = String.format("B%03d - %s (%s)", bus.getBusID(), bus.getPlateNumber(), bus.getStatus());
+            cmbBus.addItem(new ComboBoxItem(bus.getBusID(), displayText));
         }
 
         // Initial calculations
@@ -605,24 +628,24 @@ public class BusAllocation extends JFrame {
         Random random = new Random();
         
         for (Route route : routes) {
-            int busesOnRoute = getBusCountForRoute(route.routeNumber);
+            int busesOnRoute = getBusCountForRoute(route.getRouteID());
             
-            // Mock delay index calculation
+            // Delay index calculation based on buses on route
             double baseDelay = 2.0 + (random.nextDouble() * 3.0);
             double busEfficiencyFactor = busesOnRoute * 0.1;
             double delayIndex = Math.max(0.5, baseDelay - busEfficiencyFactor + (random.nextDouble() * 0.5));
             delayIndex = Math.round(delayIndex * 10.0) / 10.0;
             
-            routeDelayIndexes.put(route.routeNumber, delayIndex);
+            routeDelayIndexes.put(route.getRouteID(), delayIndex);
         }
         
         updateLastUpdatedLabel();
     }
 
-    private int getBusCountForRoute(String routeNumber) {
+    private int getBusCountForRoute(int routeID) {
         int count = 0;
-        for (String allocatedRoute : busRouteAllocations.values()) {
-            if (allocatedRoute.equals(routeNumber)) {
+        for (Integer allocatedRouteID : busRouteAllocations.values()) {
+            if (allocatedRouteID != null && allocatedRouteID == routeID) {
                 count++;
             }
         }
@@ -642,24 +665,41 @@ public class BusAllocation extends JFrame {
     private void refreshAllocationTable() {
         tableModel.setRowCount(0);
         
-        Map<String, List<String>> routeToBuses = new HashMap<>();
+        Map<Integer, List<Integer>> routeToBuses = new HashMap<>();
         
-        for (Map.Entry<String, String> entry : busRouteAllocations.entrySet()) {
-            String busId = entry.getKey();
-            String routeNumber = entry.getValue();
+        for (Map.Entry<Integer, Integer> entry : busRouteAllocations.entrySet()) {
+            int busID = entry.getKey();
+            int routeID = entry.getValue();
             
-            routeToBuses.putIfAbsent(routeNumber, new ArrayList<>());
-            routeToBuses.get(routeNumber).add(busId);
+            routeToBuses.putIfAbsent(routeID, new ArrayList<>());
+            routeToBuses.get(routeID).add(busID);
         }
         
-        for (Map.Entry<String, List<String>> entry : routeToBuses.entrySet()) {
-            String routeNumber = entry.getKey();
-            List<String> busesOnRoute = entry.getValue();
+        for (Map.Entry<Integer, List<Integer>> entry : routeToBuses.entrySet()) {
+            int routeID = entry.getKey();
+            List<Integer> busesOnRoute = entry.getValue();
             int totalBusesOnRoute = busesOnRoute.size();
-            double delayIndex = routeDelayIndexes.getOrDefault(routeNumber, 0.0);
+            double delayIndex = routeDelayIndexes.getOrDefault(routeID, 0.0);
             
-            for (String busId : busesOnRoute) {
-                tableModel.addRow(new Object[]{busId, routeNumber, totalBusesOnRoute, delayIndex});
+            // Get route name for display
+            String routeDisplay = "";
+            for (Route route : routes) {
+                if (route.getRouteID() == routeID) {
+                    routeDisplay = String.format("R%d - %s", route.getRouteID(), route.getRouteName());
+                    break;
+                }
+            }
+            
+            for (int busID : busesOnRoute) {
+                // Get bus plate number for display
+                String busDisplay = "";
+                for (Bus bus : buses) {
+                    if (bus.getBusID() == busID) {
+                        busDisplay = String.format("B%03d - %s", bus.getBusID(), bus.getPlateNumber());
+                        break;
+                    }
+                }
+                tableModel.addRow(new Object[]{busDisplay, routeDisplay, totalBusesOnRoute, delayIndex});
             }
         }
         
@@ -686,35 +726,66 @@ public class BusAllocation extends JFrame {
     }
 
     private void handleAllocateBus() {
-        String selectedRoute = (String) cmbRoute.getSelectedItem();
-        String selectedBus = (String) cmbBus.getSelectedItem();
+        Object selectedRouteObj = cmbRoute.getSelectedItem();
+        Object selectedBusObj = cmbBus.getSelectedItem();
         
-        if (selectedRoute == null || selectedRoute.equals("-- Select Route --")) {
+        if (!(selectedRouteObj instanceof ComboBoxItem) || ((ComboBoxItem) selectedRouteObj).getId() == 0) {
             JOptionPane.showMessageDialog(this, "Please select a route.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        if (selectedBus == null || selectedBus.equals("-- Select Bus --")) {
+        if (!(selectedBusObj instanceof ComboBoxItem) || ((ComboBoxItem) selectedBusObj).getId() == 0) {
             JOptionPane.showMessageDialog(this, "Please select a bus.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        if (busRouteAllocations.containsKey(selectedBus)) {
-            String currentRoute = busRouteAllocations.get(selectedBus);
+        int busID = ((ComboBoxItem) selectedBusObj).getId();
+        int routeID = ((ComboBoxItem) selectedRouteObj).getId();
+        
+        // Get route name for display
+        String routeName = "";
+        for (Route route : routes) {
+            if (route.getRouteID() == routeID) {
+                routeName = route.getRouteName();
+                break;
+            }
+        }
+        
+        // Get bus plate number for display
+        String busPlate = "";
+        for (Bus bus : buses) {
+            if (bus.getBusID() == busID) {
+                busPlate = bus.getPlateNumber();
+                break;
+            }
+        }
+        
+        if (busRouteAllocations.containsKey(busID)) {
+            int currentRouteID = busRouteAllocations.get(busID);
+            String currentRouteName = "";
+            for (Route route : routes) {
+                if (route.getRouteID() == currentRouteID) {
+                    currentRouteName = route.getRouteName();
+                    break;
+                }
+            }
             int response = JOptionPane.showConfirmDialog(this,
-                String.format("Bus %s is already allocated to %s. Reallocate to %s?", selectedBus, currentRoute, selectedRoute),
+                String.format("Bus %s is already allocated to %s. Reallocate to %s?", busPlate, currentRouteName, routeName),
                 "Reallocate Bus", JOptionPane.YES_NO_OPTION);
             
             if (response != JOptionPane.YES_OPTION) return;
         }
         
-        busRouteAllocations.put(selectedBus, selectedRoute);
+        // Allocate bus to route using backend
+        operationRegister.allocateBusToRoute(busID, routeID);
         
-        for (Bus bus : buses) {
-            if (bus.busId.equals(selectedBus)) {
-                bus.status = "Allocated";
-                break;
-            }
+        // Update local data structures
+        busRouteAllocations.put(busID, routeID);
+        
+        // Reload buses to get updated status
+        buses = busPersistanceHandler.getAllBuses();
+        if (buses == null) {
+            buses = new ArrayList<>();
         }
         
         refreshSummaryCards();
@@ -722,7 +793,7 @@ public class BusAllocation extends JFrame {
         recalculateDelayIndex();
         
         JOptionPane.showMessageDialog(this, 
-            String.format("Bus %s successfully allocated to %s!", selectedBus, selectedRoute), 
+            String.format("Bus %s successfully allocated to %s!", busPlate, routeName), 
             "Success", JOptionPane.INFORMATION_MESSAGE);
         
         cmbRoute.setSelectedIndex(0);
@@ -730,34 +801,64 @@ public class BusAllocation extends JFrame {
     }
 
     private void handleDeallocateBus() {
-        String selectedBus = (String) cmbBus.getSelectedItem();
+        Object selectedBusObj = cmbBus.getSelectedItem();
         
-        if (selectedBus == null || selectedBus.equals("-- Select Bus --")) {
+        if (!(selectedBusObj instanceof ComboBoxItem) || ((ComboBoxItem) selectedBusObj).getId() == 0) {
             JOptionPane.showMessageDialog(this, "Please select a bus.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        if (!busRouteAllocations.containsKey(selectedBus)) {
+        int busID = ((ComboBoxItem) selectedBusObj).getId();
+        
+        if (!busRouteAllocations.containsKey(busID)) {
+            // Get bus plate number for display
+            String busPlate = "";
+            for (Bus bus : buses) {
+                if (bus.getBusID() == busID) {
+                    busPlate = bus.getPlateNumber();
+                    break;
+                }
+            }
             JOptionPane.showMessageDialog(this, 
-                String.format("Bus %s is not currently allocated to any route.", selectedBus), 
+                String.format("Bus %s is not currently allocated to any route.", busPlate), 
                 "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         
-        String currentRoute = busRouteAllocations.get(selectedBus);
+        int currentRouteID = busRouteAllocations.get(busID);
+        String currentRouteName = "";
+        for (Route route : routes) {
+            if (route.getRouteID() == currentRouteID) {
+                currentRouteName = route.getRouteName();
+                break;
+            }
+        }
+        
+        // Get bus plate number for display
+        String busPlate = "";
+        for (Bus bus : buses) {
+            if (bus.getBusID() == busID) {
+                busPlate = bus.getPlateNumber();
+                break;
+            }
+        }
+        
         int response = JOptionPane.showConfirmDialog(this,
-            String.format("Deallocate bus %s from %s?", selectedBus, currentRoute),
+            String.format("Deallocate bus %s from %s?", busPlate, currentRouteName),
             "Confirm Deallocation", JOptionPane.YES_NO_OPTION);
         
         if (response != JOptionPane.YES_OPTION) return;
         
-        busRouteAllocations.remove(selectedBus);
+        // Deallocate bus by setting routeID to 0
+        operationRegister.allocateBusToRoute(busID, 0);
         
-        for (Bus bus : buses) {
-            if (bus.busId.equals(selectedBus)) {
-                bus.status = "Unallocated";
-                break;
-            }
+        // Update local data structures
+        busRouteAllocations.remove(busID);
+        
+        // Reload buses to get updated status
+        buses = busPersistanceHandler.getAllBuses();
+        if (buses == null) {
+            buses = new ArrayList<>();
         }
         
         refreshSummaryCards();
@@ -765,7 +866,7 @@ public class BusAllocation extends JFrame {
         recalculateDelayIndex();
         
         JOptionPane.showMessageDialog(this, 
-            String.format("Bus %s successfully deallocated from %s!", selectedBus, currentRoute), 
+            String.format("Bus %s successfully deallocated from %s!", busPlate, currentRouteName), 
             "Success", JOptionPane.INFORMATION_MESSAGE);
         
         cmbRoute.setSelectedIndex(0);
@@ -897,23 +998,24 @@ public class BusAllocation extends JFrame {
         }
     }
 
-    private static class Bus {
-        String busId;
-        String status;
-        
-        Bus(String busId, String status) {
-            this.busId = busId;
-            this.status = status;
-        }
-    }
 
-    private static class Route {
-        String routeNumber;
-        String description;
+    // Helper class for combo box items
+    private static class ComboBoxItem {
+        private int id;
+        private String displayText;
         
-        Route(String routeNumber, String description) {
-            this.routeNumber = routeNumber;
-            this.description = description;
+        public ComboBoxItem(int id, String displayText) {
+            this.id = id;
+            this.displayText = displayText;
+        }
+        
+        public int getId() {
+            return id;
+        }
+        
+        @Override
+        public String toString() {
+            return displayText;
         }
     }
 

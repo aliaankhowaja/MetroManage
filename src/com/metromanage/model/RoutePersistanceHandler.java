@@ -2,6 +2,7 @@ package com.metromanage.model;
 
 import com.metromanage.domain.Route;
 import java.sql.*;
+import java.util.ArrayList;
 
 public class RoutePersistanceHandler extends PersistanceHandler {
 
@@ -65,5 +66,27 @@ public class RoutePersistanceHandler extends PersistanceHandler {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public ArrayList<Route> getAllRoutes() {
+        String query = "Select * From route Where isActive = 1";
+        ArrayList<Route> routes = new ArrayList<>();
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Route route = new Route();
+                    route.setRouteID(rs.getInt("id"));
+                    route.setRouteName(rs.getString("routeName"));
+                    route.setTotalDistance(rs.getFloat("totalDistance"));
+                    route.setEstimatedTime(rs.getInt("estimatedTime"));
+                    route.setActive(rs.getBoolean("isActive"));
+                    route.setCost(rs.getFloat("cost"));
+                    routes.add(route);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return routes;
     }
 }
