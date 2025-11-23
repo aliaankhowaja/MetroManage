@@ -174,18 +174,18 @@ public class BusPersistanceHandler extends PersistanceHandler {
         String searchQuery;
         if (includeDeleted) {
             searchQuery = "SELECT * FROM Bus WHERE " +
-                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "(plateNumber LIKE ? OR status = ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
                          "ORDER BY plateNumber";
         } else {
             searchQuery = "SELECT * FROM Bus WHERE " +
-                         "(plateNumber LIKE ? OR status LIKE ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
+                         "(plateNumber LIKE ? OR status = ? OR CAST(capacity AS VARCHAR) LIKE ?) " +
                          "AND status != 'Deleted' " +
                          "ORDER BY plateNumber";
         }
         
         try (PreparedStatement pstmt = dbConnection.prepareStatement(searchQuery)) {
             pstmt.setString(1, searchPattern);
-            pstmt.setString(2, searchPattern);
+            pstmt.setString(2, searchTerm);
             pstmt.setString(3, searchPattern);
             
             try (ResultSet rs = pstmt.executeQuery()) {
