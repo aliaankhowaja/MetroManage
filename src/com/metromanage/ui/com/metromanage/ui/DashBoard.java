@@ -130,8 +130,6 @@ public class DashBoard extends JFrame {
         sidebar.add(makeModernSidebarButton("Allocate Buses", () -> openAllocateBuses()));
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(makeModernSidebarButton("Purchase Ticket", () -> openPurchaseTicket()));
-        sidebar.add(Box.createVerticalStrut(8));
-        sidebar.add(makeModernSidebarButton("Submit Feedback", () -> openSubmitFeedback()));
 
         sidebar.add(Box.createVerticalGlue());
 
@@ -155,7 +153,7 @@ public class DashBoard extends JFrame {
         cardArea.setOpaque(false);
 
         cardArea.add(makeEnhancedActionCard("Boarding Totals", "Real-time passenger analytics", TEAL, () -> openViewBoardingTotals()));
-        cardArea.add(makeEnhancedActionCard("Check Balance", "View account balance", SKY, () -> openCheckBalance()));
+        cardArea.add(makeEnhancedActionCard("View Feedback", "View user feedback and reviews", SKY, () -> openSubmitFeedback()));
         cardArea.add(makeEnhancedActionCard("Peak Hours", "Traffic analysis dashboard", SKY, () -> openViewPeakHours()));
         cardArea.add(makeEnhancedActionCard("View Schedule", "Bus schedules & routes", TEAL, () -> openViewSchedule()));
 

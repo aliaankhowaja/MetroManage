@@ -441,11 +441,11 @@ public class ManageUsers extends JFrame {
         pnlTableContainer.add(headerPanel, BorderLayout.NORTH);
 
         // Create table
-        String[] columns = {"PassengerID", "Full Name", "Phone Number", "Email", "Status", "Actions"};
+        String[] columns = {"PassengerID", "Full Name", "Phone Number", "Email", "Balance", "Status", "Actions"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5; // Only Actions column is "editable" (for buttons)
+                return column == 6; // Only Actions column is "editable" (for buttons)
             }
         };
 
@@ -465,8 +465,27 @@ public class ManageUsers extends JFrame {
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(230, 230, 230)));
         header.setPreferredSize(new Dimension(header.getWidth(), 40));
 
-        // Custom renderer for Status column
+        // Custom renderer for Balance column (column 4)
         tblUsers.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                JLabel label = (JLabel) c;
+                label.setFont(getCustomFont(Font.BOLD, 13));
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                
+                // Format as currency
+                if (value != null) {
+                    label.setText("$" + String.format("%.2f", value));
+                }
+                
+                return label;
+            }
+        });
+        
+        // Custom renderer for Status column (now column 5)
+        tblUsers.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
@@ -498,16 +517,17 @@ public class ManageUsers extends JFrame {
         ButtonRenderer buttonRenderer = new ButtonRenderer();
         ButtonEditor buttonEditor = new ButtonEditor(new JCheckBox());
         
-        tblUsers.getColumnModel().getColumn(5).setCellRenderer(buttonRenderer);
-        tblUsers.getColumnModel().getColumn(5).setCellEditor(buttonEditor);
+        tblUsers.getColumnModel().getColumn(6).setCellRenderer(buttonRenderer);
+        tblUsers.getColumnModel().getColumn(6).setCellEditor(buttonEditor);
 
         // Set column widths
-        tblUsers.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tblUsers.getColumnModel().getColumn(1).setPreferredWidth(150);
-        tblUsers.getColumnModel().getColumn(2).setPreferredWidth(120);
-        tblUsers.getColumnModel().getColumn(3).setPreferredWidth(200);
-        tblUsers.getColumnModel().getColumn(4).setPreferredWidth(100);
-        tblUsers.getColumnModel().getColumn(5).setPreferredWidth(250);
+        tblUsers.getColumnModel().getColumn(0).setPreferredWidth(100);  // PassengerID
+        tblUsers.getColumnModel().getColumn(1).setPreferredWidth(150);  // Full Name
+        tblUsers.getColumnModel().getColumn(2).setPreferredWidth(120);  // Phone Number
+        tblUsers.getColumnModel().getColumn(3).setPreferredWidth(200);  // Email
+        tblUsers.getColumnModel().getColumn(4).setPreferredWidth(100);  // Balance
+        tblUsers.getColumnModel().getColumn(5).setPreferredWidth(100);  // Status
+        tblUsers.getColumnModel().getColumn(6).setPreferredWidth(250);  // Actions
 
         // Setup row sorter for filtering/searching
         rowSorter = new TableRowSorter<>(tableModel);
@@ -570,10 +590,11 @@ public class ManageUsers extends JFrame {
             String name = passenger.getName();
             String phoneNumber = passenger.getPhoneNumber();
             String email = passenger.getEmail();
+            Float walletBalance = passenger.getWalletBalance();
             String status = passenger.getStatus();
             
-            // Add row to table (PassengerID, Full Name, Phone Number, Email, Status, Actions)
-            tableModel.addRow(new Object[]{passengerID, name, phoneNumber, email, status, ""});
+            // Add row to table (PassengerID, Full Name, Phone Number, Email, Balance, Status, Actions)
+            tableModel.addRow(new Object[]{passengerID, name, phoneNumber, email, walletBalance, status, ""});
         }
         
         // Refresh analytics cards with real data
@@ -639,7 +660,7 @@ public class ManageUsers extends JFrame {
         // Search in columns: Full Name (index 1) and Email (index 3)
         java.util.List<javax.swing.RowFilter<DefaultTableModel, Object>> filters = new java.util.ArrayList<>();
         filters.add(javax.swing.RowFilter.regexFilter("(?i)" + searchText, 1)); // Full Name
-        filters.add(javax.swing.RowFilter.regexFilter("(?i)" + searchText, 3)); // Email
+        filters.add(javax.swing.RowFilter.regexFilter("(?i)" + searchText, 3)); // Email (index moved due to Balance column)
         
         // Combine filters with OR logic (match any column)
         rowSorter.setRowFilter(javax.swing.RowFilter.orFilter(filters));
