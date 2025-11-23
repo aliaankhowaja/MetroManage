@@ -272,4 +272,18 @@ public class StationPersistanceHandler extends PersistanceHandler {
             return null;
         }
     }
+    
+    public int getTotalStations() {
+        String query = "SELECT COUNT(*) as stationCount FROM Station";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("stationCount");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

@@ -89,4 +89,18 @@ public class RoutePersistanceHandler extends PersistanceHandler {
         }
         return routes;
     }
+    
+    public int getTotalActiveBuses() {
+        String query = "SELECT COUNT(*) as busCount FROM Bus WHERE status = 'Active'";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("busCount");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
