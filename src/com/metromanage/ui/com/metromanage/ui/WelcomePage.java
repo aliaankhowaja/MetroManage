@@ -8,9 +8,9 @@ import java.awt.event.MouseEvent;
 
 public class WelcomePage extends JFrame {
 
-    // Paths to images OUTSIDE src folder
-    private static final String BG_IMAGE_PATH = "/Resources/background2.jpg";
-    private static final String LOGO_IMAGE_PATH = "/Resources/logo.png";
+    // Paths to images from bin directory
+    private static final String BG_IMAGE_PATH = "bin/Resources/background2.jpg";
+    private static final String LOGO_IMAGE_PATH = "bin/Resources/logo.png";
    
 
     public WelcomePage() {
@@ -46,7 +46,7 @@ public class WelcomePage extends JFrame {
         topBar.setBorder(BorderFactory.createEmptyBorder(20, 32, 12, 32));
 
         // Logo with refined sizing
-        ImageIcon rawLogo = new ImageIcon(getClass().getResource(LOGO_IMAGE_PATH));
+        ImageIcon rawLogo = new ImageIcon(LOGO_IMAGE_PATH);
         Image scaledLogo = rawLogo.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
         ImageIcon logoIcon = new ImageIcon(scaledLogo);
 
@@ -328,7 +328,7 @@ public class WelcomePage extends JFrame {
 
         BackgroundPanel(String imgPath) {
             try {
-                ImageIcon icon = new ImageIcon(getClass().getResource(imgPath));
+                ImageIcon icon = new ImageIcon(imgPath);
                 bg = icon.getImage();
                 if (icon.getIconWidth() <= 0)
                     System.err.println("⚠ Background image NOT FOUND: " + imgPath);

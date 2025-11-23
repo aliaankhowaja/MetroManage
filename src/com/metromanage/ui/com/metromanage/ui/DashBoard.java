@@ -153,7 +153,7 @@ public class DashBoard extends JFrame {
         cardArea.setOpaque(false);
 
         cardArea.add(makeEnhancedActionCard("Boarding Totals", "Real-time passenger analytics", TEAL, () -> openViewBoardingTotals()));
-        cardArea.add(makeEnhancedActionCard("View Feedback", "View user feedback and reviews", SKY, () -> openSubmitFeedback()));
+        cardArea.add(makeEnhancedActionCard("View Feedback", "View user feedback and reviews", SKY, () -> openViewFeedback()));
         cardArea.add(makeEnhancedActionCard("Peak Hours", "Traffic analysis dashboard", SKY, () -> openViewPeakHours()));
         cardArea.add(makeEnhancedActionCard("View Schedule", "Bus schedules & routes", TEAL, () -> openViewSchedule()));
 
@@ -565,8 +565,8 @@ public class DashBoard extends JFrame {
         SwingUtilities.invokeLater(() -> new PurchaseTicket().setVisible(true));
     }
 
-    private void openSubmitFeedback() {
-        SwingUtilities.invokeLater(() -> new SubmitFeedBack().setVisible(true));
+    private void openViewFeedback() {
+        SwingUtilities.invokeLater(() -> new ViewFeedback().setVisible(true));
     }
 
     private void openViewBoardingTotals() {
