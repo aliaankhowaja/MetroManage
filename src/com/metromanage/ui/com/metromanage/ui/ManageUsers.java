@@ -4,11 +4,15 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableRowSorter;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Vector;
+
+import com.metromanage.domain.AdminRegister;
+import com.metromanage.domain.Passenger;
+import com.metromanage.model.PassengerPersistanceHandler;
 
 /**
  * ManageUsers - Admin dashboard for user management with modern UI.
@@ -76,16 +80,28 @@ public class ManageUsers extends JFrame {
     private JScrollPane scrollPane;
     private JTextField txtSearch;
     private JButton btnAddUser;
+    private TableRowSorter<DefaultTableModel> rowSorter;
     
     // Navigation buttons
     private JPanel navDashboard;
     private JPanel navManageUsers;
     private JPanel navManageFleet;
     private JPanel navLogout;
+    
+    // Backend handlers
+    private AdminRegister adminRegister;
+    private PassengerPersistanceHandler passengerPersistanceHandler;
+    
+    // Data structures
+    private java.util.ArrayList<Passenger> passengers;
 
     public ManageUsers() {
+        // Initialize backend handlers
+        adminRegister = new AdminRegister();
+        passengerPersistanceHandler = new PassengerPersistanceHandler();
+        
         initializeUI();
-        loadMockData();
+        loadRealData();
     }
 
     private void initializeUI() {
@@ -278,35 +294,41 @@ public class ManageUsers extends JFrame {
         pnlCards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
         pnlCards.setPreferredSize(new Dimension(1000, 140));
 
-        // Card 1: Total Users
-        JPanel card1 = createAnalyticsCard(
+        // Card 1: Total Users - Initialize labels
+        lblTotalUsersValue = new JLabel("0");
+        lblTotalUsersSubtext = new JLabel("Loading...");
+        JPanel card1 = createAnalyticsCardWithLabels(
             "Total Users",
-            "1250",
-            "Active: 950  |  Inactive: 300",
+            lblTotalUsersValue,
+            lblTotalUsersSubtext,
             PRIMARY_COLOR
         );
         pnlCards.add(card1);
 
-        // Card 2: New Users
-        JPanel card2 = createAnalyticsCard(
+        // Card 2: New Users - Initialize labels
+        lblNewUsersValue = new JLabel("0");
+        lblNewUsersSubtext = new JLabel("Loading...");
+        JPanel card2 = createAnalyticsCardWithLabels(
             "New Users (Last 7 Days)",
-            "45",
-            "↑ +10 vs previous week",
+            lblNewUsersValue,
+            lblNewUsersSubtext,
             new Color(76, 175, 80)
         );
         pnlCards.add(card2);
 
-        // Card 3: Blocked/Suspended
-        JPanel card3 = createAnalyticsCard(
+        // Card 3: Blocked/Suspended - Initialize labels
+        lblBlockedUsersValue = new JLabel("0");
+        lblBlockedUsersSubtext = new JLabel("Loading...");
+        JPanel card3 = createAnalyticsCardWithLabels(
             "Blocked / Suspended",
-            "12",
-            "Requires review",
+            lblBlockedUsersValue,
+            lblBlockedUsersSubtext,
             new Color(244, 67, 54)
         );
         pnlCards.add(card3);
     }
 
-    private JPanel createAnalyticsCard(String title, String value, String subtext, Color accentColor) {
+    private JPanel createAnalyticsCardWithLabels(String title, JLabel valueLabel, JLabel subtextLabel, Color accentColor) {
         JPanel card = new RoundedPanel(15);
         card.setBackground(CARD_BACKGROUND);
         card.setLayout(new BorderLayout());
@@ -325,20 +347,18 @@ public class ManageUsers extends JFrame {
         content.add(lblTitle);
         content.add(Box.createVerticalStrut(10));
 
-        // Value
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(getCustomFont(Font.BOLD, 36));
-        lblValue.setForeground(TEXT_PRIMARY);
-        lblValue.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblValue);
+        // Value - use the provided label reference
+        valueLabel.setFont(getCustomFont(Font.BOLD, 36));
+        valueLabel.setForeground(TEXT_PRIMARY);
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(valueLabel);
         content.add(Box.createVerticalStrut(8));
 
-        // Subtext
-        JLabel lblSubtext = new JLabel(subtext);
-        lblSubtext.setFont(getCustomFont(Font.PLAIN, 12));
-        lblSubtext.setForeground(TEXT_MUTED);
-        lblSubtext.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblSubtext);
+        // Subtext - use the provided label reference
+        subtextLabel.setFont(getCustomFont(Font.PLAIN, 12));
+        subtextLabel.setForeground(TEXT_MUTED);
+        subtextLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(subtextLabel);
 
         // Add left padding to content to create space from indicator
         JPanel contentWrapper = new JPanel(new BorderLayout());
@@ -383,20 +403,26 @@ public class ManageUsers extends JFrame {
             new EmptyBorder(8, 12, 8, 12)
         ));
         txtSearch.setForeground(TEXT_MUTED);
-        txtSearch.setText("Search by username or email");
+        txtSearch.setText("Search by name or email");
         txtSearch.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
-                if (txtSearch.getText().equals("Search by username or email")) {
+                if (txtSearch.getText().equals("Search by name or email")) {
                     txtSearch.setText("");
                     txtSearch.setForeground(TEXT_PRIMARY);
                 }
             }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 if (txtSearch.getText().isEmpty()) {
-                    txtSearch.setText("Search by username or email");
+                    txtSearch.setText("Search by name or email");
                     txtSearch.setForeground(TEXT_MUTED);
                 }
             }
+        });
+        // Add document listener for real-time search
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { applySearchFilter(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { applySearchFilter(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { applySearchFilter(); }
         });
         controlsPanel.add(txtSearch);
 
@@ -415,7 +441,7 @@ public class ManageUsers extends JFrame {
         pnlTableContainer.add(headerPanel, BorderLayout.NORTH);
 
         // Create table
-        String[] columns = {"UserID", "Full Name", "Username", "Email", "Status", "Actions"};
+        String[] columns = {"PassengerID", "Full Name", "Phone Number", "Email", "Status", "Actions"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -483,6 +509,10 @@ public class ManageUsers extends JFrame {
         tblUsers.getColumnModel().getColumn(4).setPreferredWidth(100);
         tblUsers.getColumnModel().getColumn(5).setPreferredWidth(250);
 
+        // Setup row sorter for filtering/searching
+        rowSorter = new TableRowSorter<>(tableModel);
+        tblUsers.setRowSorter(rowSorter);
+
         scrollPane = new JScrollPane(tblUsers);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
         scrollPane.getViewport().setBackground(Color.WHITE);
@@ -524,27 +554,96 @@ public class ManageUsers extends JFrame {
         return btn;
     }
 
-    private void loadMockData() {
-        // TODO: connect to backend service later
-        Object[][] mockData = {
-            {1001, "John Doe", "johndoe", "john.doe@email.com", "Active"},
-            {1002, "Jane Smith", "janesmith", "jane.smith@email.com", "Active"},
-            {1003, "Bob Johnson", "bobjohnson", "bob.j@email.com", "Inactive"},
-            {1004, "Alice Williams", "alicew", "alice.williams@email.com", "Active"},
-            {1005, "Charlie Brown", "charlieb", "charlie.brown@email.com", "Suspended"},
-            {1006, "Diana Prince", "dprince", "diana.prince@email.com", "Active"},
-            {1007, "Ethan Hunt", "ehunt", "ethan.hunt@email.com", "Active"},
-            {1008, "Fiona Green", "fgreen", "fiona.green@email.com", "Inactive"},
-            {1009, "George Miller", "gmiller", "george.miller@email.com", "Active"},
-            {1010, "Hannah White", "hwhite", "hannah.white@email.com", "Active"}
-        };
-
-        for (Object[] row : mockData) {
-            tableModel.addRow(new Object[]{row[0], row[1], row[2], row[3], row[4], ""});
+    private void loadRealData() {
+        // Load passengers from database
+        passengers = passengerPersistanceHandler.getAllPassengers();
+        if (passengers == null) {
+            passengers = new java.util.ArrayList<>();
+        }
+        
+        // Clear existing table data
+        tableModel.setRowCount(0);
+        
+        // Populate table with real passenger data
+        for (Passenger passenger : passengers) {
+            int passengerID = passenger.getPassengerID();
+            String name = passenger.getName();
+            String phoneNumber = passenger.getPhoneNumber();
+            String email = passenger.getEmail();
+            String status = passenger.getStatus();
+            
+            // Add row to table (PassengerID, Full Name, Phone Number, Email, Status, Actions)
+            tableModel.addRow(new Object[]{passengerID, name, phoneNumber, email, status, ""});
+        }
+        
+        // Refresh analytics cards with real data
+        refreshAnalyticsCards();
+    }
+    
+    private void refreshAnalyticsCards() {
+        int totalUsers = 0;
+        int activeUsers = 0;
+        int inactiveUsers = 0;
+        int suspendedUsers = 0;
+        int newUsersLast7Days = 0;
+        
+        java.time.LocalDateTime sevenDaysAgo = java.time.LocalDateTime.now().minusDays(7);
+        
+        for (Passenger passenger : passengers) {
+            String status = passenger.getStatus();
+            if (status != null && !status.equalsIgnoreCase("deleted")) {
+                totalUsers++;
+                if (status.equalsIgnoreCase("Active")) {
+                    activeUsers++;
+                } else if (status.equalsIgnoreCase("Inactive")) {
+                    inactiveUsers++;
+                } else if (status.equalsIgnoreCase("Suspended")) {
+                    suspendedUsers++;
+                }
+                
+                // Count new users in last 7 days
+                if (passenger.getRegistrationDate() != null && passenger.getRegistrationDate().isAfter(sevenDaysAgo)) {
+                    newUsersLast7Days++;
+                }
+            }
+        }
+        
+        // Update card 1: Total Users
+        lblTotalUsersValue.setText(String.valueOf(totalUsers));
+        lblTotalUsersSubtext.setText("Active: " + activeUsers + "  |  Inactive: " + inactiveUsers);
+        
+        // Update card 2: New Users
+        lblNewUsersValue.setText(String.valueOf(newUsersLast7Days));
+        lblNewUsersSubtext.setText("Registered in last 7 days");
+        
+        // Update card 3: Blocked/Suspended
+        lblBlockedUsersValue.setText(String.valueOf(suspendedUsers));
+        if (suspendedUsers > 0) {
+            lblBlockedUsersSubtext.setText("Requires review");
+        } else {
+            lblBlockedUsersSubtext.setText("No suspended users");
         }
     }
 
     // ==================== ACTION HANDLERS ====================
+
+    private void applySearchFilter() {
+        String searchText = txtSearch.getText().trim();
+        
+        // If placeholder text or empty, show all rows
+        if (searchText.isEmpty() || searchText.equals("Search by name or email")) {
+            rowSorter.setRowFilter(null);
+            return;
+        }
+        
+        // Search in columns: Full Name (index 1) and Email (index 3)
+        java.util.List<javax.swing.RowFilter<DefaultTableModel, Object>> filters = new java.util.ArrayList<>();
+        filters.add(javax.swing.RowFilter.regexFilter("(?i)" + searchText, 1)); // Full Name
+        filters.add(javax.swing.RowFilter.regexFilter("(?i)" + searchText, 3)); // Email
+        
+        // Combine filters with OR logic (match any column)
+        rowSorter.setRowFilter(javax.swing.RowFilter.orFilter(filters));
+    }
 
     private void openAddUserDialog() {
         UserDialog dialog = new UserDialog(this, "Add New User", null);
@@ -552,78 +651,153 @@ public class ManageUsers extends JFrame {
         
         if (dialog.isConfirmed()) {
             UserData userData = dialog.getUserData();
-            int newId = tableModel.getRowCount() + 1001;
-            tableModel.addRow(new Object[]{
-                newId,
+            
+            // Create passenger using AdminRegister
+            Passenger newPassenger = adminRegister.addPassenger(
                 userData.fullName,
-                userData.username,
                 userData.email,
-                userData.status,
-                ""
-            });
-            JOptionPane.showMessageDialog(this, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                userData.phoneNumber,
+                userData.password,
+                0.0f  // Initial wallet balance
+            );
+            
+            if (newPassenger != null) {
+                // Reload data from database
+                loadRealData();
+                JOptionPane.showMessageDialog(this, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add user! Email may already exist.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void editUser(int row) {
-        // TODO: connect to backend service later
-        String username = tableModel.getValueAt(row, 2).toString();
-        String fullName = tableModel.getValueAt(row, 1).toString();
+        int actualRow = tblUsers.convertRowIndexToModel(row);
         
-        JOptionPane.showMessageDialog(
-            this,
-            "Edit functionality for user: " + fullName + " (" + username + ")\n\n" +
-            "This would open an edit dialog with:\n" +
-            "- Full Name: " + tableModel.getValueAt(row, 1) + "\n" +
-            "- Username: " + tableModel.getValueAt(row, 2) + "\n" +
-            "- Email: " + tableModel.getValueAt(row, 3) + "\n" +
-            "- Status: " + tableModel.getValueAt(row, 4) + "\n\n" +
-            "[Dummy - Not yet implemented]",
-            "Edit User",
-            JOptionPane.INFORMATION_MESSAGE
+        // Get passenger ID from table
+        int passengerID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
+        
+        // Find the actual Passenger object
+        Passenger passenger = null;
+        for (Passenger p : passengers) {
+            if (p.getPassengerID() == passengerID) {
+                passenger = p;
+                break;
+            }
+        }
+        
+        if (passenger == null) {
+            JOptionPane.showMessageDialog(this, "Passenger not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Create existing data for dialog
+        UserData existingData = new UserData(
+            passenger.getName(),
+            passenger.getPhoneNumber(),
+            passenger.getEmail(),
+            "",  // Don't populate password
+            passenger.getStatus()
         );
+        
+        UserDialog dialog = new UserDialog(this, "Edit User", existingData);
+        dialog.setVisible(true);
+        
+        if (dialog.isConfirmed()) {
+            UserData userData = dialog.getUserData();
+            
+            // Update passenger using AdminRegister
+            // Note: password should be empty for edit (not changing it)
+            String passwordToUpdate = userData.password.isEmpty() ? passenger.getPasswordHash() : userData.password;
+            
+            adminRegister.updatePassenger(
+                passenger.getEmail(),  // Use existing email as identifier
+                userData.fullName,
+                userData.phoneNumber,
+                passwordToUpdate,
+                userData.status,
+                passenger.getWalletBalance()
+            );
+            
+            // Reload data from database
+            loadRealData();
+            JOptionPane.showMessageDialog(this, "User updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void toggleUserStatus(int row) {
-        // TODO: connect to backend service later
-        String currentStatus = tableModel.getValueAt(row, 4).toString();
-        String username = tableModel.getValueAt(row, 2).toString();
-        String newStatus = currentStatus.equals("Active") ? "Inactive" : "Active";
+        int actualRow = tblUsers.convertRowIndexToModel(row);
+        int passengerID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
+        String currentStatus = tableModel.getValueAt(actualRow, 4).toString();
+        String name = tableModel.getValueAt(actualRow, 1).toString();
         
-        JOptionPane.showMessageDialog(
+        // Find the actual Passenger object
+        Passenger passenger = null;
+        for (Passenger p : passengers) {
+            if (p.getPassengerID() == passengerID) {
+                passenger = p;
+                break;
+            }
+        }
+        
+        if (passenger == null) {
+            JOptionPane.showMessageDialog(this, "Passenger not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        String newStatus = currentStatus.equalsIgnoreCase("Active") ? "Inactive" : "Active";
+        
+        int confirm = JOptionPane.showConfirmDialog(
             this,
-            "Deactivate/Toggle Status for: " + username + "\n\n" +
+            "Change status for: " + name + "\n\n" +
             "Current Status: " + currentStatus + "\n" +
-            "Would change to: " + newStatus + "\n\n" +
-            "This would:\n" +
-            "- Update database status\n" +
-            "- Send notification email\n" +
-            "- Log the change\n\n" +
-            "[Dummy - Not yet implemented]",
-            "Toggle User Status",
-            JOptionPane.INFORMATION_MESSAGE
+            "New Status: " + newStatus,
+            "Confirm Status Change",
+            JOptionPane.YES_NO_OPTION
         );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Update passenger status
+            adminRegister.updatePassenger(
+                passenger.getEmail(),
+                passenger.getName(),
+                passenger.getPhoneNumber(),
+                passenger.getPasswordHash(),
+                newStatus,
+                passenger.getWalletBalance()
+            );
+            
+            // Reload data from database
+            loadRealData();
+            JOptionPane.showMessageDialog(this, "Status updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void deleteUser(int row) {
-        // TODO: connect to backend service later
-        String username = tableModel.getValueAt(row, 2).toString();
-        String fullName = tableModel.getValueAt(row, 1).toString();
+        int actualRow = tblUsers.convertRowIndexToModel(row);
+        int passengerID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
+        String name = tableModel.getValueAt(actualRow, 1).toString();
+        String email = tableModel.getValueAt(actualRow, 3).toString();
         
-        JOptionPane.showMessageDialog(
+        int confirm = JOptionPane.showConfirmDialog(
             this,
-            "Delete User: " + fullName + " (" + username + ")\n\n" +
-            "This would:\n" +
-            "- Remove user from database\n" +
-            "- Archive user data\n" +
-            "- Send confirmation email\n" +
-            "- Revoke all access tokens\n" +
-            "- Log deletion event\n\n" +
-            "⚠️ This action would be permanent!\n\n" +
-            "[Dummy - Not yet implemented]",
-            "Delete User",
+            "Are you sure you want to delete user: " + name + "?\n" +
+            "Email: " + email + "\n\n" +
+            "This will mark the user as deleted.\n" +
+            "⚠️ This action cannot be easily undone!",
+            "Confirm Delete User",
+            JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE
         );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            // Delete passenger using AdminRegister (marks as deleted)
+            adminRegister.deletePassenger(email);
+            
+            // Reload data from database
+            loadRealData();
+            JOptionPane.showMessageDialog(this, "User deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void handleNavigation(String destination) {
@@ -848,14 +1022,14 @@ public class ManageUsers extends JFrame {
      */
     private static class UserData {
         String fullName;
-        String username;
+        String phoneNumber;
         String email;
         String password;
         String status;
 
-        public UserData(String fullName, String username, String email, String password, String status) {
+        public UserData(String fullName, String phoneNumber, String email, String password, String status) {
             this.fullName = fullName;
-            this.username = username;
+            this.phoneNumber = phoneNumber;
             this.email = email;
             this.password = password;
             this.status = status;
@@ -867,7 +1041,7 @@ public class ManageUsers extends JFrame {
      */
     private class UserDialog extends JDialog {
         private JTextField txtFullName;
-        private JTextField txtUsername;
+        private JTextField txtPhoneNumber;
         private JTextField txtEmail;
         private JPasswordField txtPassword;
         private JComboBox<String> cmbStatus;
@@ -876,7 +1050,7 @@ public class ManageUsers extends JFrame {
 
         public UserDialog(JFrame parent, String title, UserData existingData) {
             super(parent, title, true);
-            setSize(450, 400);
+            setSize(450, 450);
             setLocationRelativeTo(parent);
             setLayout(new BorderLayout());
 
@@ -894,13 +1068,13 @@ public class ManageUsers extends JFrame {
             formPanel.add(txtFullName);
             formPanel.add(Box.createVerticalStrut(15));
 
-            // Username
-            formPanel.add(createLabel("Username:"));
-            txtUsername = new JTextField();
-            txtUsername.setFont(getCustomFont(Font.PLAIN, 13));
-            txtUsername.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-            if (existingData != null) txtUsername.setText(existingData.username);
-            formPanel.add(txtUsername);
+            // Phone Number
+            formPanel.add(createLabel("Phone Number:"));
+            txtPhoneNumber = new JTextField();
+            txtPhoneNumber.setFont(getCustomFont(Font.PLAIN, 13));
+            txtPhoneNumber.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+            if (existingData != null) txtPhoneNumber.setText(existingData.phoneNumber);
+            formPanel.add(txtPhoneNumber);
             formPanel.add(Box.createVerticalStrut(15));
 
             // Email
@@ -908,7 +1082,11 @@ public class ManageUsers extends JFrame {
             txtEmail = new JTextField();
             txtEmail.setFont(getCustomFont(Font.PLAIN, 13));
             txtEmail.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-            if (existingData != null) txtEmail.setText(existingData.email);
+            if (existingData != null) {
+                txtEmail.setText(existingData.email);
+                txtEmail.setEditable(false);  // Email cannot be changed (used as identifier)
+                txtEmail.setBackground(new Color(245, 245, 245));
+            }
             formPanel.add(txtEmail);
             formPanel.add(Box.createVerticalStrut(15));
 
@@ -952,7 +1130,7 @@ public class ManageUsers extends JFrame {
                     String password = existingData == null ? new String(txtPassword.getPassword()) : "";
                     userData = new UserData(
                         txtFullName.getText().trim(),
-                        txtUsername.getText().trim(),
+                        txtPhoneNumber.getText().trim(),
                         txtEmail.getText().trim(),
                         password,
                         cmbStatus.getSelectedItem().toString()
@@ -976,7 +1154,7 @@ public class ManageUsers extends JFrame {
 
         private boolean validateInput() {
             if (txtFullName.getText().trim().isEmpty() ||
-                txtUsername.getText().trim().isEmpty() ||
+                txtPhoneNumber.getText().trim().isEmpty() ||
                 txtEmail.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "All fields are required!", "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return false;
