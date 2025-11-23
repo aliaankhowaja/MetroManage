@@ -115,4 +115,18 @@ public class RidePersistanceHandler extends PersistanceHandler {
         }
     }
     
+    public int getTodayTripsCount() {
+        String query = "SELECT COUNT(*) as tripCount FROM ride WHERE CAST(boardingTime AS DATE) = CAST(GETDATE() AS DATE) AND isActive = 1";
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("tripCount");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
 }

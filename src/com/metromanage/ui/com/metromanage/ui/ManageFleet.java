@@ -15,6 +15,7 @@ import com.metromanage.domain.Bus;
 import com.metromanage.domain.Route;
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
+import com.metromanage.model.RidePersistanceHandler;
 
 /**
  * ManageFleet - Admin dashboard for fleet management with modern UI.
@@ -95,6 +96,7 @@ public class ManageFleet extends JFrame {
     private AdminRegister adminRegister;
     private BusPersistanceHandler busPersistanceHandler;
     private RoutePersistanceHandler routePersistanceHandler;
+    private RidePersistanceHandler ridePersistanceHandler;
     
     // Data structures
     private java.util.ArrayList<Bus> buses;
@@ -105,6 +107,7 @@ public class ManageFleet extends JFrame {
         adminRegister = new AdminRegister();
         busPersistanceHandler = new BusPersistanceHandler();
         routePersistanceHandler = new RoutePersistanceHandler();
+        ridePersistanceHandler = new RidePersistanceHandler();
         
         initializeUI();
         loadRealData();
@@ -323,8 +326,8 @@ public class ManageFleet extends JFrame {
         pnlSummaryCards.add(card2);
 
         // Card 3: Today's Trips - Initialize labels
-        lblTodayTripsValue = new JLabel("230");
-        lblTodayTripsSubtext = new JLabel("Estimated on-time: 92%");
+        lblTodayTripsValue = new JLabel("0");
+        lblTodayTripsSubtext = new JLabel("Loading...");
         JPanel card3 = createAnalyticsCardWithLabels(
             "Today's Trips",
             lblTodayTripsValue,
@@ -647,7 +650,14 @@ public class ManageFleet extends JFrame {
         lblOutOfServiceValue.setText(String.valueOf(totalOutOfService));
         lblOutOfServiceSubtext.setText("Maintenance: " + underMaintenance);
         
-        // Card 3 (Today's Trips) would require additional data - keep as placeholder for now
+        // Update card 3: Today's Trips from database
+        int todayTrips = ridePersistanceHandler.getTodayTripsCount();
+        lblTodayTripsValue.setText(String.valueOf(todayTrips));
+        if (todayTrips > 0) {
+            lblTodayTripsSubtext.setText("Active rides today");
+        } else {
+            lblTodayTripsSubtext.setText("No trips recorded today");
+        }
     }
 
     // ==================== ACTION HANDLERS ====================

@@ -35,14 +35,14 @@ public class Main{
         // balanceTest();
         // manageBusTest();
         // allocateBusTest();
-        /*scheduleTest();
+        //scheduleTest();
         SwingUtilities.invokeLater(() -> {
 
            // Create ONLY the welcome page and show it
            WelcomePage welcomePage = new WelcomePage();
            welcomePage.setVisible(true);
 
-       });*/
+       });
     }
 
     static void requestTicketTest() {
