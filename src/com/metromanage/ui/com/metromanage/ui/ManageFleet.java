@@ -9,8 +9,12 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
+import com.metromanage.domain.AdminRegister;
+import com.metromanage.domain.Bus;
+import com.metromanage.domain.Route;
+import com.metromanage.model.BusPersistanceHandler;
+import com.metromanage.model.RoutePersistanceHandler;
 
 /**
  * ManageFleet - Admin dashboard for fleet management with modern UI.
@@ -86,10 +90,24 @@ public class ManageFleet extends JFrame {
     private JPanel navManageUsers;
     private JPanel navManageFleet;
     private JPanel navLogout;
+    
+    // Backend handlers
+    private AdminRegister adminRegister;
+    private BusPersistanceHandler busPersistanceHandler;
+    private RoutePersistanceHandler routePersistanceHandler;
+    
+    // Data structures
+    private java.util.ArrayList<Bus> buses;
+    private java.util.ArrayList<Route> routes;
 
     public ManageFleet() {
+        // Initialize backend handlers
+        adminRegister = new AdminRegister();
+        busPersistanceHandler = new BusPersistanceHandler();
+        routePersistanceHandler = new RoutePersistanceHandler();
+        
         initializeUI();
-        loadMockData();
+        loadRealData();
     }
 
     private void initializeUI() {
@@ -282,35 +300,41 @@ public class ManageFleet extends JFrame {
         pnlSummaryCards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
         pnlSummaryCards.setPreferredSize(new Dimension(1000, 140));
 
-        // Card 1: Total Buses
-        JPanel card1 = createAnalyticsCard(
+        // Card 1: Total Buses - Initialize labels
+        lblTotalBusesValue = new JLabel("0");
+        lblTotalBusesSubtext = new JLabel("Loading...");
+        JPanel card1 = createAnalyticsCardWithLabels(
             "Total Buses",
-            "80",
-            "In Service: 60  |  Reserved: 10",
+            lblTotalBusesValue,
+            lblTotalBusesSubtext,
             PRIMARY_COLOR
         );
         pnlSummaryCards.add(card1);
 
-        // Card 2: Out of Service
-        JPanel card2 = createAnalyticsCard(
+        // Card 2: Out of Service - Initialize labels
+        lblOutOfServiceValue = new JLabel("0");
+        lblOutOfServiceSubtext = new JLabel("Loading...");
+        JPanel card2 = createAnalyticsCardWithLabels(
             "Out of Service",
-            "5",
-            "Maintenance ongoing",
+            lblOutOfServiceValue,
+            lblOutOfServiceSubtext,
             new Color(244, 67, 54)
         );
         pnlSummaryCards.add(card2);
 
-        // Card 3: Today's Trips
-        JPanel card3 = createAnalyticsCard(
+        // Card 3: Today's Trips - Initialize labels
+        lblTodayTripsValue = new JLabel("230");
+        lblTodayTripsSubtext = new JLabel("Estimated on-time: 92%");
+        JPanel card3 = createAnalyticsCardWithLabels(
             "Today's Trips",
-            "230",
-            "Estimated on-time: 92%",
+            lblTodayTripsValue,
+            lblTodayTripsSubtext,
             new Color(76, 175, 80)
         );
         pnlSummaryCards.add(card3);
     }
 
-    private JPanel createAnalyticsCard(String title, String value, String subtext, Color accentColor) {
+    private JPanel createAnalyticsCardWithLabels(String title, JLabel valueLabel, JLabel subtextLabel, Color accentColor) {
         JPanel card = new RoundedPanel(15);
         card.setBackground(CARD_BACKGROUND);
         card.setLayout(new BorderLayout());
@@ -329,20 +353,18 @@ public class ManageFleet extends JFrame {
         content.add(lblTitle);
         content.add(Box.createVerticalStrut(10));
 
-        // Value
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(getCustomFont(Font.BOLD, 36));
-        lblValue.setForeground(TEXT_PRIMARY);
-        lblValue.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblValue);
+        // Value - use the provided label reference
+        valueLabel.setFont(getCustomFont(Font.BOLD, 36));
+        valueLabel.setForeground(TEXT_PRIMARY);
+        valueLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(valueLabel);
         content.add(Box.createVerticalStrut(8));
 
-        // Subtext
-        JLabel lblSubtext = new JLabel(subtext);
-        lblSubtext.setFont(getCustomFont(Font.PLAIN, 12));
-        lblSubtext.setForeground(TEXT_MUTED);
-        lblSubtext.setAlignmentX(Component.LEFT_ALIGNMENT);
-        content.add(lblSubtext);
+        // Subtext - use the provided label reference
+        subtextLabel.setFont(getCustomFont(Font.PLAIN, 12));
+        subtextLabel.setForeground(TEXT_MUTED);
+        subtextLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(subtextLabel);
 
         // Add left padding to content to create space from indicator
         JPanel contentWrapper = new JPanel(new BorderLayout());
@@ -409,7 +431,7 @@ public class ManageFleet extends JFrame {
         });
         controlsPanel.add(txtSearch);
 
-        cmbStatusFilter = new JComboBox<>(new String[]{"All", "In Service", "Available", "Out of Service", "Retired"});
+        cmbStatusFilter = new JComboBox<>(new String[]{"All", "Active", "UnderMaintenance", "Inactive", "OutOfService"});
         cmbStatusFilter.setFont(getCustomFont(Font.PLAIN, 13));
         cmbStatusFilter.setBackground(Color.WHITE);
         cmbStatusFilter.setForeground(TEXT_PRIMARY);
@@ -432,11 +454,11 @@ public class ManageFleet extends JFrame {
         pnlTableContainer.add(headerPanel, BorderLayout.NORTH);
 
         // Create table
-        String[] columns = {"BusID", "Plate Number", "Route", "Capacity", "Status", "Last Service Date", "Actions"};
+        String[] columns = {"BusID", "Plate Number", "Route", "Capacity", "Status", "Actions"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 6; // Only Actions column is "editable" (for buttons)
+                return column == 5; // Only Actions column is "editable" (for buttons)
             }
         };
 
@@ -456,7 +478,7 @@ public class ManageFleet extends JFrame {
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(230, 230, 230)));
         header.setPreferredSize(new Dimension(header.getWidth(), 40));
 
-        // Custom renderer for Status column
+        // Custom renderer for Status column (now column index 4)
         tblFleet.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -469,16 +491,19 @@ public class ManageFleet extends JFrame {
                 label.setHorizontalAlignment(SwingConstants.CENTER);
                 label.setOpaque(true);
                 
-                if (status.equals("In Service")) {
+                if (status.equals("Active")) {
                     label.setForeground(new Color(76, 175, 80));
                     label.setBackground(new Color(232, 245, 233));
-                } else if (status.equals("Available")) {
+                } else if (status.equals("Inactive")) {
                     label.setForeground(new Color(33, 150, 243));
                     label.setBackground(new Color(227, 242, 253));
-                } else if (status.equals("Out of Service")) {
+                } else if (status.equals("OutOfService")) {
+                    label.setForeground(new Color(244, 67, 54));
+                    label.setBackground(new Color(255, 235, 238));
+                } else if (status.equals("UnderMaintenance")) {
                     label.setForeground(new Color(255, 152, 0));
                     label.setBackground(new Color(255, 243, 224));
-                } else if (status.equals("Retired")) {
+                } else if (status.equals("Deleted")) {
                     label.setForeground(new Color(158, 158, 158));
                     label.setBackground(new Color(245, 245, 245));
                 }
@@ -492,17 +517,16 @@ public class ManageFleet extends JFrame {
         ButtonRenderer buttonRenderer = new ButtonRenderer();
         ButtonEditor buttonEditor = new ButtonEditor(new JCheckBox());
         
-        tblFleet.getColumnModel().getColumn(6).setCellRenderer(buttonRenderer);
-        tblFleet.getColumnModel().getColumn(6).setCellEditor(buttonEditor);
+        tblFleet.getColumnModel().getColumn(5).setCellRenderer(buttonRenderer);
+        tblFleet.getColumnModel().getColumn(5).setCellEditor(buttonEditor);
 
         // Set column widths
         tblFleet.getColumnModel().getColumn(0).setPreferredWidth(80);
         tblFleet.getColumnModel().getColumn(1).setPreferredWidth(120);
-        tblFleet.getColumnModel().getColumn(2).setPreferredWidth(100);
+        tblFleet.getColumnModel().getColumn(2).setPreferredWidth(150);
         tblFleet.getColumnModel().getColumn(3).setPreferredWidth(80);
         tblFleet.getColumnModel().getColumn(4).setPreferredWidth(120);
-        tblFleet.getColumnModel().getColumn(5).setPreferredWidth(140);
-        tblFleet.getColumnModel().getColumn(6).setPreferredWidth(280);
+        tblFleet.getColumnModel().getColumn(5).setPreferredWidth(280);
 
         // Setup row sorter for filtering
         rowSorter = new TableRowSorter<>(tableModel);
@@ -549,24 +573,81 @@ public class ManageFleet extends JFrame {
         return btn;
     }
 
-    private void loadMockData() {
-        // TODO: replace with real FleetService later
-        Object[][] mockData = {
-            {1001, "PKM-2301", "Route 5", 40, "In Service", "2024-11-15"},
-            {1002, "PKM-2302", "Route 12", 45, "In Service", "2024-11-10"},
-            {1003, "PKM-2303", "Route 3", 40, "Available", "2024-11-18"},
-            {1004, "PKM-2304", "Route 8", 50, "In Service", "2024-11-05"},
-            {1005, "PKM-2305", "Route 15", 40, "Out of Service", "2024-10-28"},
-            {1006, "PKM-2306", "Route 7", 45, "In Service", "2024-11-12"},
-            {1007, "PKM-2307", "Route 10", 40, "Available", "2024-11-20"},
-            {1008, "PKM-2308", "Route 2", 50, "Retired", "2024-09-15"},
-            {1009, "PKM-2309", "Route 6", 45, "In Service", "2024-11-17"},
-            {1010, "PKM-2310", "Route 11", 40, "Available", "2024-11-14"}
-        };
-
-        for (Object[] row : mockData) {
-            tableModel.addRow(new Object[]{row[0], row[1], row[2], row[3], row[4], row[5], ""});
+    private void loadRealData() {
+        // Load buses from database
+        buses = busPersistanceHandler.getAllBuses();
+        if (buses == null) {
+            buses = new java.util.ArrayList<>();
         }
+        
+        // Load routes from database
+        routes = routePersistanceHandler.getAllRoutes();
+        if (routes == null) {
+            routes = new java.util.ArrayList<>();
+        }
+        
+        // Clear existing table data
+        tableModel.setRowCount(0);
+        
+        // Populate table with real bus data
+        for (Bus bus : buses) {
+            int busID = bus.getBusID();
+            String plateNumber = bus.getPlateNumber();
+            int capacity = bus.getCapacity();
+            String status = bus.getStatus();
+            int routeID = bus.getRouteID();
+            
+            // Get route name from routeID
+            String routeName = "Not Assigned";
+            if (routeID > 0) {
+                for (Route route : routes) {
+                    if (route.getRouteID() == routeID) {
+                        routeName = route.getRouteName();
+                        break;
+                    }
+                }
+            }
+            
+            // Add row to table (BusID, Plate Number, Route, Capacity, Status, Actions)
+            tableModel.addRow(new Object[]{busID, plateNumber, routeName, capacity, status, ""});
+        }
+        
+        // Refresh analytics cards with real data
+        refreshAnalyticsCards();
+    }
+
+    private void refreshAnalyticsCards() {
+        int totalBuses = 0;
+        int outOfService = 0;
+        int active = 0;
+        int underMaintenance = 0;
+        int inactive = 0;
+        
+        for (Bus bus : buses) {
+            totalBuses++;
+            String status = bus.getStatus();
+            
+            if (status.equalsIgnoreCase("OutOfService")) {
+                outOfService++;
+            } else if (status.equalsIgnoreCase("Active")) {
+                active++;
+            } else if (status.equalsIgnoreCase("UnderMaintenance")) {
+                underMaintenance++;
+            } else if (status.equalsIgnoreCase("Inactive")) {
+                inactive++;
+            }
+        }
+        
+        // Update card 1: Total Buses
+        lblTotalBusesValue.setText(String.valueOf(totalBuses));
+        lblTotalBusesSubtext.setText("Active: " + active + "  |  Inactive: " + inactive);
+        
+        // Update card 2: Out of Service (including Under Maintenance)
+        int totalOutOfService = outOfService + underMaintenance;
+        lblOutOfServiceValue.setText(String.valueOf(totalOutOfService));
+        lblOutOfServiceSubtext.setText("Maintenance: " + underMaintenance);
+        
+        // Card 3 (Today's Trips) would require additional data - keep as placeholder for now
     }
 
     // ==================== ACTION HANDLERS ====================
@@ -614,31 +695,60 @@ public class ManageFleet extends JFrame {
         
         if (dialog.isConfirmed()) {
             BusData busData = dialog.getBusData();
-            int newId = 1000 + tableModel.getRowCount() + 1;
-            tableModel.addRow(new Object[]{
-                newId,
-                busData.plateNumber,
-                busData.route,
-                busData.capacity,
-                busData.status,
-                busData.lastServiceDate,
-                ""
-            });
-            JOptionPane.showMessageDialog(this, "Bus added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Parse route ID from route string
+            int routeID = 0;
+            if (busData.routeID != null && !busData.routeID.isEmpty()) {
+                try {
+                    routeID = Integer.parseInt(busData.routeID);
+                } catch (NumberFormatException e) {
+                    routeID = 0;
+                }
+            }
+            
+            // Parse capacity
+            int capacity = Integer.parseInt(busData.capacity);
+            
+            // Create bus using AdminRegister
+            Bus newBus = adminRegister.addBus(busData.plateNumber, capacity, busData.status, routeID);
+            
+            if (newBus != null) {
+                // Reload data from database
+                loadRealData();
+                JOptionPane.showMessageDialog(this, "Bus added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add bus!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void editBus(int row) {
-        // TODO: replace with real FleetService later
         int actualRow = tblFleet.convertRowIndexToModel(row);
         
+        // Get bus ID from table
+        int busID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
+        
+        // Find the actual Bus object
+        Bus bus = null;
+        for (Bus b : buses) {
+            if (b.getBusID() == busID) {
+                bus = b;
+                break;
+            }
+        }
+        
+        if (bus == null) {
+            JOptionPane.showMessageDialog(this, "Bus not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Create existing data for dialog
         BusData existingData = new BusData(
-            tableModel.getValueAt(actualRow, 0).toString(),
-            tableModel.getValueAt(actualRow, 1).toString(),
-            tableModel.getValueAt(actualRow, 2).toString(),
-            tableModel.getValueAt(actualRow, 3).toString(),
-            tableModel.getValueAt(actualRow, 4).toString(),
-            tableModel.getValueAt(actualRow, 5).toString()
+            String.valueOf(bus.getBusID()),
+            bus.getPlateNumber(),
+            String.valueOf(bus.getRouteID()),
+            String.valueOf(bus.getCapacity()),
+            bus.getStatus()
         );
         
         BusDialog dialog = new BusDialog(this, "Edit Bus", existingData);
@@ -646,63 +756,121 @@ public class ManageFleet extends JFrame {
         
         if (dialog.isConfirmed()) {
             BusData busData = dialog.getBusData();
-            tableModel.setValueAt(busData.plateNumber, actualRow, 1);
-            tableModel.setValueAt(busData.route, actualRow, 2);
-            tableModel.setValueAt(busData.capacity, actualRow, 3);
-            tableModel.setValueAt(busData.status, actualRow, 4);
-            tableModel.setValueAt(busData.lastServiceDate, actualRow, 5);
+            
+            // Parse route ID
+            int routeID = 0;
+            if (busData.routeID != null && !busData.routeID.isEmpty()) {
+                try {
+                    routeID = Integer.parseInt(busData.routeID);
+                } catch (NumberFormatException e) {
+                    routeID = 0;
+                }
+            }
+            
+            // Parse capacity
+            int capacity = Integer.parseInt(busData.capacity);
+            
+            // Update bus using AdminRegister
+            adminRegister.updateBus(busID, busData.plateNumber, capacity, busData.status, routeID);
+            
+            // Reload data from database
+            loadRealData();
             JOptionPane.showMessageDialog(this, "Bus updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void retireBus(int row) {
-        // TODO: replace with real FleetService later
         int actualRow = tblFleet.convertRowIndexToModel(row);
-        String busId = tableModel.getValueAt(actualRow, 0).toString();
+        int busID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
         String plateNumber = tableModel.getValueAt(actualRow, 1).toString();
         
         int confirm = JOptionPane.showConfirmDialog(
             this,
-            "Are you sure you want to retire bus " + plateNumber + " (ID: " + busId + ")?\n\n" +
-            "This will change its status to 'Retired' and it will no longer be available for service.",
+            "Are you sure you want to retire bus " + plateNumber + " (ID: " + busID + ")?\n\n" +
+            "This will mark the bus as deleted and it will no longer be available for service.",
             "Confirm Retire Bus",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE
         );
         
         if (confirm == JOptionPane.YES_OPTION) {
-            tableModel.setValueAt("Retired", actualRow, 4);
+            // Delete bus using AdminRegister (marks as deleted)
+            adminRegister.deleteBus(busID);
+            
+            // Reload data from database
+            loadRealData();
             JOptionPane.showMessageDialog(this, "Bus retired successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void reassignRoute(int row) {
-        // TODO: replace with real FleetService later
         int actualRow = tblFleet.convertRowIndexToModel(row);
-        String busId = tableModel.getValueAt(actualRow, 0).toString();
+        int busID = Integer.parseInt(tableModel.getValueAt(actualRow, 0).toString());
         String plateNumber = tableModel.getValueAt(actualRow, 1).toString();
-        String currentRoute = tableModel.getValueAt(actualRow, 2).toString();
+        String currentRouteName = tableModel.getValueAt(actualRow, 2).toString();
         
-        String[] routes = {"Route 1", "Route 2", "Route 3", "Route 5", "Route 6", "Route 7", 
-                          "Route 8", "Route 10", "Route 11", "Route 12", "Route 15"};
+        // Find the Bus object to get current route ID
+        Bus bus = null;
+        for (Bus b : buses) {
+            if (b.getBusID() == busID) {
+                bus = b;
+                break;
+            }
+        }
         
-        String newRoute = (String) JOptionPane.showInputDialog(
+        if (bus == null) {
+            JOptionPane.showMessageDialog(this, "Bus not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Build route options from database
+        String[] routeOptions = new String[routes.size() + 1];
+        routeOptions[0] = "Not Assigned (ID: 0)";
+        for (int i = 0; i < routes.size(); i++) {
+            Route route = routes.get(i);
+            routeOptions[i + 1] = route.getRouteName() + " (ID: " + route.getRouteID() + ")";
+        }
+        
+        String newRouteSelection = (String) JOptionPane.showInputDialog(
             this,
-            "Select new route for bus " + plateNumber + " (ID: " + busId + ")\n" +
-            "Current route: " + currentRoute,
+            "Select new route for bus " + plateNumber + " (ID: " + busID + ")\n" +
+            "Current route: " + currentRouteName,
             "Reassign Route",
             JOptionPane.QUESTION_MESSAGE,
             null,
-            routes,
-            currentRoute
+            routeOptions,
+            null
         );
         
-        if (newRoute != null && !newRoute.equals(currentRoute)) {
-            tableModel.setValueAt(newRoute, actualRow, 2);
-            JOptionPane.showMessageDialog(this, 
-                "Bus " + plateNumber + " successfully reassigned to " + newRoute + "!", 
-                "Success", 
-                JOptionPane.INFORMATION_MESSAGE);
+        if (newRouteSelection != null) {
+            // Parse route ID from selection
+            int newRouteID = 0;
+            if (newRouteSelection.contains("(ID: ")) {
+                String idStr = newRouteSelection.substring(newRouteSelection.indexOf("(ID: ") + 5, newRouteSelection.indexOf(")"));
+                newRouteID = Integer.parseInt(idStr);
+            }
+            
+            // Only update if route changed
+            if (newRouteID != bus.getRouteID()) {
+                // Update bus using AdminRegister
+                adminRegister.updateBus(busID, bus.getPlateNumber(), bus.getCapacity(), bus.getStatus(), newRouteID);
+                
+                // Reload data from database
+                loadRealData();
+                
+                String newRouteName = "Not Assigned";
+                for (Route route : routes) {
+                    if (route.getRouteID() == newRouteID) {
+                        newRouteName = route.getRouteName();
+                        break;
+                    }
+                }
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Bus " + plateNumber + " successfully reassigned to " + newRouteName + "!", 
+                    "Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
         }
     }
 
@@ -929,18 +1097,16 @@ public class ManageFleet extends JFrame {
     private static class BusData {
         String busId;
         String plateNumber;
-        String route;
+        String routeID;  // Changed from route name to route ID
         String capacity;
         String status;
-        String lastServiceDate;
 
-        public BusData(String busId, String plateNumber, String route, String capacity, String status, String lastServiceDate) {
+        public BusData(String busId, String plateNumber, String routeID, String capacity, String status) {
             this.busId = busId;
             this.plateNumber = plateNumber;
-            this.route = route;
+            this.routeID = routeID;
             this.capacity = capacity;
             this.status = status;
-            this.lastServiceDate = lastServiceDate;
         }
     }
 
@@ -953,13 +1119,12 @@ public class ManageFleet extends JFrame {
         private JComboBox<String> cmbRoute;
         private JTextField txtCapacity;
         private JComboBox<String> cmbStatus;
-        private JTextField txtLastServiceDate;
         private boolean confirmed = false;
         private BusData busData;
 
         public BusDialog(JFrame parent, String title, BusData existingData) {
             super(parent, title, true);
-            setSize(450, 500);
+            setSize(450, 450);
             setLocationRelativeTo(parent);
             setLayout(new BorderLayout());
 
@@ -994,14 +1159,30 @@ public class ManageFleet extends JFrame {
             formPanel.add(txtPlateNumber);
             formPanel.add(Box.createVerticalStrut(15));
 
-            // Route
+            // Route - Load from database dynamically
             formPanel.add(createLabel("Route:"));
-            String[] routes = {"Route 1", "Route 2", "Route 3", "Route 5", "Route 6", "Route 7", 
-                              "Route 8", "Route 10", "Route 11", "Route 12", "Route 15"};
-            cmbRoute = new JComboBox<>(routes);
+            java.util.ArrayList<String> routeOptions = new java.util.ArrayList<>();
+            routeOptions.add("Not Assigned (0)");
+            for (Route route : routes) {
+                routeOptions.add(route.getRouteName() + " (" + route.getRouteID() + ")");
+            }
+            cmbRoute = new JComboBox<>(routeOptions.toArray(new String[0]));
             cmbRoute.setFont(getCustomFont(Font.PLAIN, 13));
             cmbRoute.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-            if (existingData != null) cmbRoute.setSelectedItem(existingData.route);
+            if (existingData != null && existingData.routeID != null) {
+                // Select the route based on route ID
+                int routeID = Integer.parseInt(existingData.routeID);
+                if (routeID == 0) {
+                    cmbRoute.setSelectedIndex(0);
+                } else {
+                    for (int i = 0; i < routes.size(); i++) {
+                        if (routes.get(i).getRouteID() == routeID) {
+                            cmbRoute.setSelectedIndex(i + 1);
+                            break;
+                        }
+                    }
+                }
+            }
             formPanel.add(cmbRoute);
             formPanel.add(Box.createVerticalStrut(15));
 
@@ -1016,25 +1197,12 @@ public class ManageFleet extends JFrame {
 
             // Status
             formPanel.add(createLabel("Status:"));
-            cmbStatus = new JComboBox<>(new String[]{"In Service", "Available", "Out of Service", "Retired"});
+            cmbStatus = new JComboBox<>(new String[]{"Active", "UnderMaintenance", "Inactive", "OutOfService"});
             cmbStatus.setFont(getCustomFont(Font.PLAIN, 13));
             cmbStatus.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
             if (existingData != null) cmbStatus.setSelectedItem(existingData.status);
             formPanel.add(cmbStatus);
             formPanel.add(Box.createVerticalStrut(15));
-
-            // Last Service Date
-            formPanel.add(createLabel("Last Service Date (YYYY-MM-DD):"));
-            txtLastServiceDate = new JTextField();
-            txtLastServiceDate.setFont(getCustomFont(Font.PLAIN, 13));
-            txtLastServiceDate.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-            if (existingData != null) {
-                txtLastServiceDate.setText(existingData.lastServiceDate);
-            } else {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                txtLastServiceDate.setText(sdf.format(new Date()));
-            }
-            formPanel.add(txtLastServiceDate);
 
             add(formPanel, BorderLayout.CENTER);
 
@@ -1055,13 +1223,19 @@ public class ManageFleet extends JFrame {
             btnSave.setFocusPainted(false);
             btnSave.addActionListener(e -> {
                 if (validateInput()) {
+                    // Extract route ID from selection
+                    String selectedRoute = cmbRoute.getSelectedItem().toString();
+                    String routeID = "0";
+                    if (selectedRoute.contains("(") && selectedRoute.contains(")")) {
+                        routeID = selectedRoute.substring(selectedRoute.lastIndexOf("(") + 1, selectedRoute.lastIndexOf(")"));
+                    }
+                    
                     busData = new BusData(
                         txtBusId.getText().trim(),
                         txtPlateNumber.getText().trim(),
-                        cmbRoute.getSelectedItem().toString(),
+                        routeID,
                         txtCapacity.getText().trim(),
-                        cmbStatus.getSelectedItem().toString(),
-                        txtLastServiceDate.getText().trim()
+                        cmbStatus.getSelectedItem().toString()
                     );
                     confirmed = true;
                     dispose();
@@ -1082,8 +1256,7 @@ public class ManageFleet extends JFrame {
 
         private boolean validateInput() {
             if (txtPlateNumber.getText().trim().isEmpty() ||
-                txtCapacity.getText().trim().isEmpty() ||
-                txtLastServiceDate.getText().trim().isEmpty()) {
+                txtCapacity.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "All fields are required!", "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -1097,12 +1270,6 @@ public class ManageFleet extends JFrame {
                 }
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Capacity must be a valid number!", "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            // Basic date format validation
-            if (!txtLastServiceDate.getText().matches("\\d{4}-\\d{2}-\\d{2}")) {
-                JOptionPane.showMessageDialog(this, "Date must be in YYYY-MM-DD format!", "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
