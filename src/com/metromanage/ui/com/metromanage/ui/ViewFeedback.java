@@ -26,10 +26,16 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.metromanage.domain.Feedback;
+import com.metromanage.model.FeedbackPersistanceHandler;
+
 /**
- * Admin feedback dashboard using in-memory mock data.
+ * Admin feedback dashboard connected to database.
  */
 public class ViewFeedback extends JFrame {
+
+    // ==================== BACKEND HANDLERS ====================
+    private FeedbackPersistanceHandler feedbackPersistanceHandler;
 
     private static final Color PRIMARY_COLOR = new Color(86, 124, 141);
     private static final Color SIDEBAR_BACKGROUND = new Color(47, 65, 86);
@@ -79,7 +85,10 @@ public class ViewFeedback extends JFrame {
     private String selectedRideId;
 
     public ViewFeedback() {
-        seedMockData();
+        // Initialize backend handler
+        feedbackPersistanceHandler = new FeedbackPersistanceHandler();
+        
+        loadFeedbackFromDatabase();
         initializeUI();
         populateRouteFilter();
         applyFilters();
@@ -881,54 +890,68 @@ public class ViewFeedback extends JFrame {
         }
     }
 
-    private void seedMockData() {
-        // TODO: replace with persistence hook
-        LocalDateTime now = LocalDateTime.now();
-        allFeedbackEntries.add(new FeedbackEntry("R-101", "R1", "Bus-12", "USER1234", 2,
-            Arrays.asList("Complaint", "Overcrowding"),
-                "Bus was extremely crowded and AC was not working properly.", now.minusHours(2), "06:30"));
-        allFeedbackEntries.add(new FeedbackEntry("R-101", "R1", "Bus-12", "USER9876", 3,
-            Arrays.asList("Suggestion", "Scheduling"),
-                "Please add more morning trips on R1 to handle rush.", now.minusHours(3), "06:45"));
-        allFeedbackEntries.add(new FeedbackEntry("R-101", "R1", "Bus-12", "USER4455", 4,
-            Arrays.asList("Compliment", "Driver"),
-                "Driver was polite and helped elderly passengers.", now.minusHours(3), "07:10"));
-        allFeedbackEntries.add(new FeedbackEntry("R-220", "R2", "Bus-08", "USER7412", 5,
-            Arrays.asList("Compliment", "Punctuality"),
-                "Ride was smooth and on time.", now.minusHours(6), "05:50"));
-        allFeedbackEntries.add(new FeedbackEntry("R-220", "R2", "Bus-08", "USER1599", 2,
-            Arrays.asList("Complaint", "Delays"),
-                "Departure delayed by 20 minutes without announcement.", now.minusDays(1), "18:30"));
-        allFeedbackEntries.add(new FeedbackEntry("R-312", "R3", "Bus-18", "USER3001", 1,
-            Arrays.asList("Complaint", "Safety"),
-                "Broken seat belts and harsh braking made the ride unsafe.", now.minusDays(2), "09:20"));
-        allFeedbackEntries.add(new FeedbackEntry("R-312", "R3", "Bus-18", "USER2700", 2,
-            Arrays.asList("Complaint", "Cleanliness"),
-                "Bus was dirty and smelled terrible.", now.minusDays(2), "09:25"));
-        allFeedbackEntries.add(new FeedbackEntry("R-400", "R4", "Bus-09", "USER6510", 4,
-            Arrays.asList("Suggestion", "Amenities"),
-                "Consider adding USB charging ports for commuters.", now.minusDays(4), "12:30"));
-        allFeedbackEntries.add(new FeedbackEntry("R-450", "R4", "Bus-09", "USER2222", 3,
-            Arrays.asList("Other", "Ticketing"),
-                "Ticket scanner malfunctioned but conductor helped.", now.minusDays(5), "15:40"));
-        allFeedbackEntries.add(new FeedbackEntry("R-510", "R5", "Bus-20", "USER9898", 5,
-            Arrays.asList("Compliment", "Comfort"),
-                "Very comfortable seats and clean bus.", now.minusDays(6), "17:15"));
-        allFeedbackEntries.add(new FeedbackEntry("R-510", "R5", "Bus-20", "USER1188", 2,
-            Arrays.asList("Complaint", "Overcrowding"),
-                "Evening trip was fully packed, need more buses.", now.minusDays(6), "17:45"));
-        allFeedbackEntries.add(new FeedbackEntry("R-620", "R6", "Bus-34", "USER4421", 4,
-            Arrays.asList("Compliment", "Driver"),
-                "Great driver, smooth ride despite rain.", now.minusDays(8), "08:10"));
-        allFeedbackEntries.add(new FeedbackEntry("R-620", "R6", "Bus-34", "USER9551", 3,
-            Arrays.asList("Suggestion", "Announcements"),
-                "Announce station names a bit louder please.", now.minusDays(8), "08:20"));
-        allFeedbackEntries.add(new FeedbackEntry("R-700", "R7", "Bus-02", "USER1677", 1,
-            Arrays.asList("Complaint", "Overcrowding"),
-                "This was the worst ride, constantly overcrowded.", now.minusDays(10), "19:00"));
-        allFeedbackEntries.add(new FeedbackEntry("R-700", "R7", "Bus-02", "USER7612", 2,
-            Arrays.asList("Complaint", "Delays"),
-                "Peak hour trip delayed every day.", now.minusDays(10), "19:05"));
+    private void loadFeedbackFromDatabase() {
+        // Load feedback from database
+        ArrayList<Feedback> dbFeedbackList = feedbackPersistanceHandler.getAllFeedback();
+        
+        // Convert database feedback to FeedbackEntry format
+        int rideCounter = 1;
+        for (Feedback feedback : dbFeedbackList) {
+            // Map feedback type to labels and rating
+            List<String> labels = new ArrayList<>();
+            int rating = 3; // Default rating
+            
+            String type = feedback.getType();
+            if (type != null) {
+                if (type.equalsIgnoreCase("Complaint")) {
+                    labels.add("Complaint");
+                    rating = 2; // Complaints usually indicate lower satisfaction
+                } else if (type.equalsIgnoreCase("Suggestion")) {
+                    labels.add("Suggestion");
+                    rating = 3; // Suggestions are neutral
+                } else if (type.equalsIgnoreCase("Compliment") || type.equalsIgnoreCase("Praise")) {
+                    labels.add("Compliment");
+                    rating = 5; // Compliments indicate high satisfaction
+                } else {
+                    labels.add("Other");
+                    rating = 3;
+                }
+            } else {
+                labels.add("Other");
+            }
+            
+            // Generate synthetic ride/route/bus data (since not in current DB schema)
+            String rideId = "R-" + String.format("%03d", rideCounter++);
+            String routeId = "R" + (1 + (feedback.getPassengerID() % 7)); // Distribute across routes
+            String busId = "Bus-" + String.format("%02d", 1 + (feedback.getPassengerID() % 20));
+            String userId = "USER" + feedback.getPassengerID();
+            
+            LocalDateTime timestamp = feedback.getTimestamp() != null ? 
+                feedback.getTimestamp() : LocalDateTime.now();
+            String departureTime = timestamp.format(DateTimeFormatter.ofPattern("HH:mm"));
+            
+            FeedbackEntry entry = new FeedbackEntry(
+                rideId,
+                routeId,
+                busId,
+                userId,
+                rating,
+                labels,
+                feedback.getComments() != null ? feedback.getComments() : "No comment",
+                timestamp,
+                departureTime
+            );
+            
+            allFeedbackEntries.add(entry);
+        }
+        
+        // If no feedback in database, keep some sample data for demonstration
+        if (allFeedbackEntries.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            allFeedbackEntries.add(new FeedbackEntry("R-101", "R1", "Bus-12", "USER1234", 2,
+                Arrays.asList("Complaint", "Overcrowding"),
+                    "No feedback in database yet. Add feedback to see real data here.", now.minusHours(2), "06:30"));
+        }
     }
 
     private static class GradientPanel extends JPanel {
