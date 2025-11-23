@@ -3,6 +3,7 @@ package com.metromanage.domain;
 import java.util.ArrayList;
 
 import com.metromanage.model.BusPersistanceHandler;
+import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.model.StationPersistanceHandler;
 
 public class OperationRegister {
@@ -39,8 +40,22 @@ public class OperationRegister {
         return bph.getBusesByRoute(routeId);
     }
 
-    public ArrayList<BoardingTotal> getPeakHours(int stationID){
+    public ArrayList<BoardingTotal> getPeakHours(int stationID) {
         StationPersistanceHandler sph = new StationPersistanceHandler();
         return sph.getBoardingTotalsByHour(stationID);
+    }
+    
+    public int getSchedule(int routeID) {
+        // returns the time after which the next bus is scheduled on the route
+        BusPersistanceHandler bph = new BusPersistanceHandler();
+        RoutePersistanceHandler rph = new RoutePersistanceHandler();
+        Route route = (Route) rph.find(routeID);
+        ArrayList<Bus> buses = bph.getActiveBusesForRoute(routeID);
+        if (buses.size() == 0 || route == null) {
+            return -1; // indicates no schedule available
+        }
+        int estimatedTime = route.getEstimatedTime();
+        int interval = estimatedTime / buses.size();
+        return interval;
     }
 }

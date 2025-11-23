@@ -272,6 +272,4 @@ public class StationPersistanceHandler extends PersistanceHandler {
             return null;
         }
     }
-
-
 }

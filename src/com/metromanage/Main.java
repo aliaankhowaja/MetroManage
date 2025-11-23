@@ -18,7 +18,8 @@ public class Main{
         // feedbackTest();
         // balanceTest();
         // manageBusTest();
-        allocateBusTest();
+        // allocateBusTest();
+        scheduleTest();
     }
 
     static void requestTicketTest() {
@@ -122,6 +123,15 @@ public class Main{
     static void allocateBusTest() {
         OperationRegister operationRegister = new OperationRegister();
         operationRegister.allocateBusToRoute(1, 2);
+    }
+
+    static void scheduleTest() {
+        OperationRegister operationRegister = new OperationRegister();
+        int interval = operationRegister.getSchedule(2);
+        System.out.println("Next bus interval for route 2: " + interval + " minutes");
+        interval = operationRegister.getSchedule(3);
+        System.out.println("Next bus interval for route 3: " + interval + " minutes");
+        
     }
 }
 
