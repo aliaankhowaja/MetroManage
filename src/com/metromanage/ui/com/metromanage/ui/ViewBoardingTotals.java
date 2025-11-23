@@ -5,18 +5,26 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
+import com.metromanage.domain.Route;
+import com.metromanage.model.RidePersistanceHandler;
+import com.metromanage.model.RidePersistanceHandler.BoardingData;
+import com.metromanage.model.RoutePersistanceHandler;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 /**
  * ViewBoardingTotals - Admin dashboard for viewing boarding totals with modern UI.
  * Features: Analytics cards (Total Boardings, Busiest Route, Active Trips), trip table with filtering.
- * Uses mock data only - no database integration yet.
  */
 public class ViewBoardingTotals extends JFrame {
+
+    // ==================== BACKEND HANDLERS ====================
+    private RidePersistanceHandler ridePersistanceHandler;
+    private RoutePersistanceHandler routePersistanceHandler;
 
     // ==================== COLOR PLACEHOLDERS ====================
     // [PLACEHOLDER: for PRIMARY_COLOR_HEX]
@@ -87,13 +95,17 @@ public class ViewBoardingTotals extends JFrame {
     private JPanel navBoardingTotals;
     private JPanel navLogout;
     
-    // Mock data storage
-    private List<TripData> allTrips;
-    private List<TripData> filteredTrips;
+    // Data storage
+    private ArrayList<BoardingData> boardingDataList;
+    private ArrayList<Route> routes;
 
     public ViewBoardingTotals() {
+        // Initialize backend handlers
+        ridePersistanceHandler = new RidePersistanceHandler();
+        routePersistanceHandler = new RoutePersistanceHandler();
+        
         initializeUI();
-        loadMockData();
+        loadRoutes();
         applyFilters();
     }
 
@@ -422,7 +434,8 @@ public class ViewBoardingTotals extends JFrame {
         lblRouteFilter.setForeground(TEXT_PRIMARY);
         filterBar.add(lblRouteFilter);
 
-        cmbRoute = new JComboBox<>(new String[]{"All Routes", "R1", "R2", "R3", "R4", "R5"});
+        cmbRoute = new JComboBox<>();
+        cmbRoute.addItem("All Routes");
         cmbRoute.setFont(getCustomFont(Font.PLAIN, 13));
         cmbRoute.setBackground(Color.WHITE);
         cmbRoute.setForeground(TEXT_PRIMARY);
@@ -437,7 +450,7 @@ public class ViewBoardingTotals extends JFrame {
         lblDateRange.setForeground(TEXT_PRIMARY);
         filterBar.add(lblDateRange);
 
-        cmbDateRange = new JComboBox<>(new String[]{"Today", "Last 7 Days", "Last 30 Days"});
+        cmbDateRange = new JComboBox<>(new String[]{"All Time", "Today", "Last 7 Days", "Last 30 Days"});
         cmbDateRange.setFont(getCustomFont(Font.PLAIN, 13));
         cmbDateRange.setBackground(Color.WHITE);
         cmbDateRange.setForeground(TEXT_PRIMARY);
@@ -567,119 +580,112 @@ public class ViewBoardingTotals extends JFrame {
         pnlTableCard.add(scrollBoardings, BorderLayout.CENTER);
     }
 
-    private void loadMockData() {
-        // TODO: replace mock data with backend call later
-        allTrips = new ArrayList<>();
+    private void loadRoutes() {
+        // Load all routes from database
+        routes = routePersistanceHandler.getAllRoutes();
         
-        // Create comprehensive mock data for trips
-        allTrips.add(new TripData("T1001", "B001", "R1", "08:00", 45));
-        allTrips.add(new TripData("T1002", "B002", "R1", "08:30", 37));
-        allTrips.add(new TripData("T1003", "B003", "R1", "09:00", 42));
-        allTrips.add(new TripData("T1004", "B004", "R1", "14:00", 28));
-        allTrips.add(new TripData("T1005", "B005", "R1", "17:30", 48));
-        
-        allTrips.add(new TripData("T2001", "B006", "R2", "07:45", 35));
-        allTrips.add(new TripData("T2002", "B007", "R2", "08:15", 40));
-        allTrips.add(new TripData("T2003", "B008", "R2", "12:30", 22));
-        allTrips.add(new TripData("T2004", "B009", "R2", "18:00", 44));
-        
-        allTrips.add(new TripData("T3001", "B010", "R3", "06:30", 18));
-        allTrips.add(new TripData("T3002", "B011", "R3", "09:15", 32));
-        allTrips.add(new TripData("T3003", "B012", "R3", "15:45", 27));
-        
-        allTrips.add(new TripData("T4001", "B013", "R4", "07:00", 30));
-        allTrips.add(new TripData("T4002", "B014", "R4", "16:00", 38));
-        
-        allTrips.add(new TripData("T5001", "B015", "R5", "10:00", 25));
-        allTrips.add(new TripData("T5002", "B016", "R5", "13:00", 20));
+        // Populate route dropdown
+        for (Route route : routes) {
+            cmbRoute.addItem(route.getRouteName());
+        }
     }
 
     private void applyFilters() {
-        // TODO: replace with real backend filtering later
         String selectedRoute = (String) cmbRoute.getSelectedItem();
         String selectedDateRange = (String) cmbDateRange.getSelectedItem();
         String selectedTimeWindow = (String) cmbTimeWindow.getSelectedItem();
         
-        filteredTrips = new ArrayList<>();
-        
-        for (TripData trip : allTrips) {
-            // Filter by route
-            if (!selectedRoute.equals("All Routes") && !trip.route.equals(selectedRoute)) {
-                continue;
-            }
-            
-            // Filter by time window
-            if (!selectedTimeWindow.equals("All Day")) {
-                int hour = Integer.parseInt(trip.departureTime.split(":")[0]);
-                if (selectedTimeWindow.equals("Morning") && (hour < 6 || hour >= 12)) {
-                    continue;
-                }
-                if (selectedTimeWindow.equals("Evening") && (hour < 17 || hour >= 23)) {
-                    continue;
+        // Determine route ID filter (0 for all routes)
+        int routeID = 0;
+        if (!selectedRoute.equals("All Routes")) {
+            for (Route route : routes) {
+                if (route.getRouteName().equals(selectedRoute)) {
+                    routeID = route.getRouteID();
+                    break;
                 }
             }
-            
-            // If passed all filters, add to filtered list
-            filteredTrips.add(trip);
         }
+        
+        // Determine days back filter
+        int daysBack = -1; // Default to all time
+        if (selectedDateRange.equals("Today")) {
+            daysBack = 0;
+        } else if (selectedDateRange.equals("Last 7 Days")) {
+            daysBack = 7;
+        } else if (selectedDateRange.equals("Last 30 Days")) {
+            daysBack = 30;
+        } else if (selectedDateRange.equals("All Time")) {
+            daysBack = -1; // Show all data
+        }
+        
+        // Determine time window filter
+        String timeWindow = "All";
+        if (selectedTimeWindow.equals("Morning")) {
+            timeWindow = "Morning";
+        } else if (selectedTimeWindow.equals("Evening")) {
+            timeWindow = "Evening";
+        }
+        
+        // Fetch data from database with filters
+        boardingDataList = ridePersistanceHandler.getBoardingData(routeID, daysBack, timeWindow);
         
         // Update table
         updateTable();
         
         // Update summary cards
-        updateSummaryCards();
+        updateSummaryCards(routeID, daysBack, timeWindow);
     }
 
     private void updateTable() {
         // Clear existing rows
         tableModel.setRowCount(0);
         
-        // Add filtered trips
-        for (TripData trip : filteredTrips) {
+        // Add boarding data
+        int tripCounter = 1;
+        for (BoardingData data : boardingDataList) {
+            // Format boarding time (extract time part only)
+            String timeStr = data.boardingTime;
+            if (timeStr != null && timeStr.length() >= 16) {
+                // Extract HH:MM from datetime string
+                timeStr = timeStr.substring(11, 16);
+            }
+            
             tableModel.addRow(new Object[]{
-                trip.tripId,
-                trip.busId,
-                trip.route,
-                trip.departureTime,
-                trip.passengerCount
+                "T" + String.format("%04d", tripCounter++),
+                "B" + String.format("%03d", data.busID),
+                data.routeName != null ? data.routeName : "N/A",
+                timeStr,
+                data.passengerCount
             });
         }
         
         // Update showing trips label
-        lblShowingTrips.setText("Showing " + filteredTrips.size() + " trips");
+        lblShowingTrips.setText("Showing " + boardingDataList.size() + " trips");
     }
 
-    private void updateSummaryCards() {
-        // Calculate total boardings
-        int totalBoardings = 0;
-        for (TripData trip : filteredTrips) {
-            totalBoardings += trip.passengerCount;
-        }
+    private void updateSummaryCards(int routeID, int daysBack, String timeWindow) {
+        // Get total boardings from database
+        int totalBoardings = ridePersistanceHandler.getTotalBoardings(routeID, daysBack, timeWindow);
         lblTotalBoardingsValue.setText(String.format("%,d", totalBoardings));
         lblTotalBoardingsSubtext.setText("Selected period");
         
-        // Calculate busiest route
-        java.util.Map<String, Integer> routeBoardings = new java.util.HashMap<>();
-        for (TripData trip : filteredTrips) {
-            routeBoardings.put(trip.route, 
-                routeBoardings.getOrDefault(trip.route, 0) + trip.passengerCount);
-        }
-        
+        // Get busiest route from database
+        Map<String, Integer> busiestRouteData = ridePersistanceHandler.getBusiestRoute(daysBack, timeWindow);
         String busiestRoute = "N/A";
         int maxBoardings = 0;
-        for (java.util.Map.Entry<String, Integer> entry : routeBoardings.entrySet()) {
-            if (entry.getValue() > maxBoardings) {
-                maxBoardings = entry.getValue();
-                busiestRoute = entry.getKey();
-            }
+        
+        if (!busiestRouteData.isEmpty()) {
+            Map.Entry<String, Integer> entry = busiestRouteData.entrySet().iterator().next();
+            busiestRoute = entry.getKey();
+            maxBoardings = entry.getValue();
         }
         
-        lblBusiestRouteValue.setText(busiestRoute);
+        lblBusiestRouteValue.setText(busiestRoute != null ? busiestRoute : "N/A");
         lblBusiestRouteSubtext.setText("Boardings: " + String.format("%,d", maxBoardings));
         
-        // Active trips = number of filtered trips
-        lblActiveTripsValue.setText(String.valueOf(filteredTrips.size()));
-        lblActiveTripsSubtext.setText("Running now");
+        // Active trips = number of trips in the table
+        lblActiveTripsValue.setText(String.valueOf(boardingDataList.size()));
+        lblActiveTripsSubtext.setText("Trips shown");
     }
 
     private void handleNavigation(String destination) {
@@ -723,25 +729,6 @@ public class ViewBoardingTotals extends JFrame {
     }
 
     // ==================== INNER CLASSES ====================
-
-    /**
-     * Trip data model for storing boarding information
-     */
-    private static class TripData {
-        String tripId;
-        String busId;
-        String route;
-        String departureTime;
-        int passengerCount;
-
-        public TripData(String tripId, String busId, String route, String departureTime, int passengerCount) {
-            this.tripId = tripId;
-            this.busId = busId;
-            this.route = route;
-            this.departureTime = departureTime;
-            this.passengerCount = passengerCount;
-        }
-    }
 
     /**
      * Rounded panel with custom painting for soft corners and shadow effect
@@ -844,9 +831,6 @@ public class ViewBoardingTotals extends JFrame {
         }
     }
 
-    // ==================== MAIN METHOD ====================
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new ViewBoardingTotals());
-    }
+ 
 }
 
