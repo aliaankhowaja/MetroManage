@@ -124,7 +124,7 @@ public class BusPersistanceHandler extends PersistanceHandler {
         return buses;
     }
 
-    public ArrayList<Bus> getAllActiveBusesForRoute(int routeID) {
+    public ArrayList<Bus> getActiveBusesForRoute(int routeID) {
         String query = "Select * From Bus Where routeID = ? And status = 'Active'";
         ArrayList<Bus> buses = new ArrayList<>();
         try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {

@@ -47,9 +47,10 @@ public class OperationRegister {
     
     public int getSchedule(int routeID) {
         // returns the time after which the next bus is scheduled on the route
+        BusPersistanceHandler bph = new BusPersistanceHandler();
         RoutePersistanceHandler rph = new RoutePersistanceHandler();
         Route route = (Route) rph.find(routeID);
-        ArrayList<Bus> buses = getBusesByRoute(routeID);
+        ArrayList<Bus> buses = bph.getActiveBusesForRoute(routeID);
         if (buses.size() == 0 || route == null) {
             return -1; // indicates no schedule available
         }
