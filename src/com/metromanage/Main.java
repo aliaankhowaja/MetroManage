@@ -4,16 +4,27 @@ import com.metromanage.domain.StationRegister;
 import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
-import com.metromanage.model.DB;
+import com.metromanage.ui.WelcomePage;
+import javax.swing.SwingUtilities;
+// import com.metromanage.model.DB;
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.LoginHandler;
 import com.metromanage.domain.OperationRegister;
 import com.metromanage.domain.Passenger;
 import com.metromanage.domain.Bus;
 import com.metromanage.domain.Route;
+
+
 public class Main{
     public static void main(String[] args) {
         System.out.println("Welcome to MetroManage!");
+         SwingUtilities.invokeLater(() -> {
+
+            // Create ONLY the welcome page and show it
+            WelcomePage welcomePage = new WelcomePage();
+            welcomePage.setVisible(true);
+
+        });
         // Uses Windows Authentication
         //DB.createTables();
         //generateTestData();
