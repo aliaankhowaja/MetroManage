@@ -19,14 +19,14 @@ public class Main{
     public static void main(String[] args) {
         System.out.println("Welcome to MetroManage!");
         // Uses Windows Authentication
-        // DB.createTables();
+        //DB.createTables();
         //generateTestData();
         //loginTest();
         //feedbackTest();
         //balanceTest();
         //manageBusTest();
         //allocateBusTest();
-        searchPassengerTest();
+        //searchPassengerTest();
         searchBusTest();
         // DB.createTables();
         // generateTestData();
@@ -35,14 +35,14 @@ public class Main{
         // balanceTest();
         // manageBusTest();
         // allocateBusTest();
-        scheduleTest();
+        /*scheduleTest();
         SwingUtilities.invokeLater(() -> {
 
            // Create ONLY the welcome page and show it
            WelcomePage welcomePage = new WelcomePage();
            welcomePage.setVisible(true);
 
-       });
+       });*/
     }
 
     static void requestTicketTest() {
@@ -204,8 +204,8 @@ public class Main{
         BusPersistanceHandler bph = new BusPersistanceHandler();
         
         // Search by plate number
-        System.out.println("1. Searching for 'APH':");
-        java.util.ArrayList<Bus> results = bph.searchBuses("APH", false);
+        System.out.println("1. Searching for 'LEA':");
+        java.util.ArrayList<Bus> results = bph.searchBuses("LEA", false);
         displayBusSearchResults(results);
         
         // Search by status
@@ -224,8 +224,8 @@ public class Main{
         displayBusSearchResults(allBuses);
         
         // Search with no results
-        System.out.println("\n5. Searching for 'XYZ999':");
-        results = bph.searchBuses("XYZ999", false);
+        System.out.println("\n5. Searching for 'LEA-3001':");
+        results = bph.searchBuses("LEA-3001", false);
         displayBusSearchResults(results);
     }
     
