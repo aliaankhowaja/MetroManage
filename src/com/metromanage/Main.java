@@ -24,6 +24,14 @@ public class Main{
         //allocateBusTest();
         searchPassengerTest();
         searchBusTest();
+        // DB.createTables();
+        // generateTestData();
+        // loginTest();
+        // feedbackTest();
+        // balanceTest();
+        // manageBusTest();
+        // allocateBusTest();
+        scheduleTest();
     }
 
     static void requestTicketTest() {
@@ -231,6 +239,13 @@ public class Main{
             }
             System.out.println("   " + "-".repeat(70));
         }
+    static void scheduleTest() {
+        OperationRegister operationRegister = new OperationRegister();
+        int interval = operationRegister.getSchedule(2);
+        System.out.println("Next bus interval for route 2: " + interval + " minutes");
+        interval = operationRegister.getSchedule(3);
+        System.out.println("Next bus interval for route 3: " + interval + " minutes");
+        
     }
 }
 
