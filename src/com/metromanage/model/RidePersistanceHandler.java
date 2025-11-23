@@ -309,6 +309,69 @@ public class RidePersistanceHandler extends PersistanceHandler {
     }
     
     /**
+     * Get hourly passenger data grouped by hour
+     * @param routeID Filter by route (0 for all routes)
+     * @param daysBack Number of days to look back (-1 for all time)
+     * @return ArrayList of HourlyData objects
+     */
+    public ArrayList<HourlyData> getHourlyData(int routeID, int daysBack) {
+        ArrayList<HourlyData> hourlyDataList = new ArrayList<>();
+        
+        // Initialize all 24 hours with 0 passengers
+        Map<Integer, Integer> hourlyPassengers = new HashMap<>();
+        for (int i = 0; i < 24; i++) {
+            hourlyPassengers.put(i, 0);
+        }
+        
+        // Build query with filters
+        StringBuilder query = new StringBuilder();
+        query.append("SELECT DATEPART(HOUR, boardingTime) as hour, COUNT(*) as passengerCount ");
+        query.append("FROM ride ");
+        query.append("WHERE boardingTime IS NOT NULL ");
+        
+        // Date range filter
+        if (daysBack == 0) {
+            query.append("AND CAST(boardingTime AS DATE) = CAST(GETDATE() AS DATE) ");
+        } else if (daysBack > 0) {
+            query.append("AND boardingTime >= DATEADD(day, -").append(daysBack).append(", GETDATE()) ");
+        }
+        
+        // Route filter
+        if (routeID > 0) {
+            query.append("AND routeID = ? ");
+        }
+        
+        query.append("GROUP BY DATEPART(HOUR, boardingTime) ");
+        query.append("ORDER BY hour");
+        
+        try (PreparedStatement pstmt = dbConnection.prepareStatement(query.toString())) {
+            if (routeID > 0) {
+                pstmt.setInt(1, routeID);
+            }
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int hour = rs.getInt("hour");
+                    int count = rs.getInt("passengerCount");
+                    hourlyPassengers.put(hour, count);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        // Convert map to list
+        for (int hour = 0; hour < 24; hour++) {
+            HourlyData data = new HourlyData();
+            data.hour = hour;
+            data.passengerCount = hourlyPassengers.get(hour);
+            hourlyDataList.add(data);
+        }
+        
+        return hourlyDataList;
+    }
+    
+    /**
      * Inner class to hold boarding data
      */
     public static class BoardingData {
@@ -316,6 +379,14 @@ public class RidePersistanceHandler extends PersistanceHandler {
         public int routeID;
         public String routeName;
         public String boardingTime;
+        public int passengerCount;
+    }
+    
+    /**
+     * Inner class to hold hourly data
+     */
+    public static class HourlyData {
+        public int hour;
         public int passengerCount;
     }
     

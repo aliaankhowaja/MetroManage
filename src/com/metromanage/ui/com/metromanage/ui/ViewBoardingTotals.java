@@ -536,8 +536,18 @@ public class ViewBoardingTotals extends JFrame {
         header.setForeground(TEXT_PRIMARY);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(230, 230, 230)));
         header.setPreferredSize(new Dimension(header.getWidth(), 40));
+        
+        // Center align header text
+        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Custom renderer for Passenger Count column
+        // Center align all columns by default
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i = 0; i < tblBoardings.getColumnCount(); i++) {
+            tblBoardings.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        // Custom renderer for Passenger Count column (with colors)
         tblBoardings.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
