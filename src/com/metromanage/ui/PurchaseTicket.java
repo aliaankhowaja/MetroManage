@@ -5,8 +5,15 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+
+import com.metromanage.model.RoutePersistanceHandler;
+import com.metromanage.model.PassengerPersistanceHandler;
+import com.metromanage.domain.Route;
+import com.metromanage.domain.StationRegister;
+import com.metromanage.domain.Ticket;
+import com.metromanage.domain.Passenger;
+
 import java.awt.*;
-import java.awt.Adjustable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
@@ -18,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+
 
 /**
  * PurchaseTicket - Admin-only guest ticket issuance console (mock UI/data only).
@@ -55,7 +64,9 @@ public class PurchaseTicket extends JFrame {
     private static final String FONT_FAMILY = "Inter";
 
     // ==================== DATA / FORMATTERS ====================
-    private static final String[] ROUTES = {"R1", "R2", "R3", "R4", "R5", "R6"};
+    // private static final String[] ROUTES = {"R1", "R2", "R3", "R4", "R5", "R6"};
+    private ArrayList<Route> routes;
+    private String[] routeNames;
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy • HH:mm", Locale.ENGLISH);
 
     // ==================== UI COMPONENTS ====================
@@ -65,47 +76,41 @@ public class PurchaseTicket extends JFrame {
 
     private JLabel lblAverageFareValue;
 
-    private JComboBox<String> cmbTicketType;
-    private JComboBox<String> cmbPassengerCategory;
+    // private JComboBox<String> cmbTicketType;
+    // private JComboBox<String> cmbPassengerCategory;
     private JComboBox<String> cmbRoute;
-    private JComboBox<String> cmbDirection;
-    private JSpinner spnPassengerCount;
-    private JComboBox<String> cmbValidity;
+    // private JComboBox<String> cmbDirection;
+    // private JSpinner spnPassengerCount;
+    // private JComboBox<String> cmbValidity;
     private JComboBox<String> cmbPaymentMethod;
-    private JTextField txtGuestName;
-    private JTextField txtGuestPhone;
-
-    private JLabel lblBaseFare;
-    private JLabel lblPassengerMultiplier;
-    private JLabel lblDiscountInfo;
-    private JLabel lblTotalFare;
-
-    private JLabel lblPreviewTicketId;
-    private JLabel lblPreviewRoute;
-    private JLabel lblPreviewTicketType;
-    private JLabel lblPreviewPassengerCount;
-    private JLabel lblPreviewTotalFare;
-    private JLabel lblPreviewValidity;
-    private JLabel lblPreviewIssuedAt;
-
-    private JTable tblGuestTickets;
-    private DefaultTableModel guestTicketTableModel;
-    private JComboBox<String> cmbRecentRouteFilter;
+    private JTextField txtPassengerID;
+    private JTextField txtCardDetails;
+    // private JTextField txtGuestPhone;
+    
+    // Check-in/Check-out fields
+    private JTextField txtCheckInTicketID;
+    private JTextField txtCheckInBusID;
+    private JTextField txtCheckInStationID;
+    private JTextField txtCheckOutTicketID;
+    private JTextField txtCheckOutStationID;
 
     // ==================== IN-MEMORY DATA ====================
-    private final List<GuestTicket> guestTickets = new ArrayList<>();
     private double lastCalculatedFare = 0.0;
     private int ticketSequence = 200;
+    private StationRegister stationRegister;
+    private Ticket lastIssuedTicket;
 
     public PurchaseTicket() {
+        stationRegister = new StationRegister();
         initializeUI();
-        seedMockTickets();
-        refreshAllViews();
         setVisible(true);
     }
 
     private void initializeUI() {
-        setTitle("Issue Guest Ticket - MetroManage");
+        RoutePersistanceHandler rph = new RoutePersistanceHandler();
+        routes = rph.getAllRoutes();
+        routeNames = routes.stream().map(Route::getRouteName).toArray(String[]::new);
+        setTitle("Station Management - MetroManage");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1350, 860);
         setLocationRelativeTo(null);
@@ -180,7 +185,7 @@ public class PurchaseTicket extends JFrame {
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(createSidebarButton("View Feedback", () -> navigateTo(new ViewFeedback())));
         sidebar.add(Box.createVerticalStrut(8));
-        sidebar.add(createSidebarButton("Issue Guest Ticket", null));
+        sidebar.add(createSidebarButton("Station Management", null));
         sidebar.add(Box.createVerticalGlue());
 
         return sidebar;
@@ -204,10 +209,10 @@ public class PurchaseTicket extends JFrame {
         enforceSectionWidth(ticketForm);
         stacked.add(ticketForm);
         stacked.add(Box.createVerticalStrut(24));
-
-        JComponent recentTickets = createRecentTicketsSection();
-        enforceSectionWidth(recentTickets);
-        stacked.add(recentTickets);
+        
+        JComponent checkInOutSection = createCheckInOutSection();
+        enforceSectionWidth(checkInOutSection);
+        stacked.add(checkInOutSection);
 
         JScrollPane scrollPane = new JScrollPane(stacked);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -232,7 +237,7 @@ public class PurchaseTicket extends JFrame {
         wrapper.setOpaque(false);
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
 
-        JLabel lblTitle = new JLabel("Issue Guest Ticket");
+        JLabel lblTitle = new JLabel("Station Management");
         lblTitle.setFont(getCustomFont(Font.BOLD, 30));
         lblTitle.setForeground(TEXT_PRIMARY);
         wrapper.add(lblTitle);
@@ -240,10 +245,10 @@ public class PurchaseTicket extends JFrame {
 
         JPanel cards = new JPanel(new GridLayout(1, 4, 18, 0));
         cards.setOpaque(false);
-        cards.add(createSummaryCard("Guest Tickets Today", "230", new Color(86, 124, 141), label -> lblTicketsTodayValue = label));
-        cards.add(createSummaryCard("Estimated Revenue Today", "PKR 18,400", new Color(76, 175, 80), label -> lblRevenueTodayValue = label));
-        cards.add(createSummaryCard("Most Popular Guest Route", "R1 – City Center", new Color(255, 183, 77), label -> lblPopularRouteValue = label));
-        cards.add(createSummaryCard("Average Fare per Ticket", "PKR 80", new Color(220, 120, 120), label -> lblAverageFareValue = label));
+        // cards.add(createSummaryCard("Guest Tickets Today", "0", new Color(86, 124, 141), label -> lblTicketsTodayValue = label));
+        // cards.add(createSummaryCard("Estimated Revenue Today", "PKR 0", new Color(76, 175, 80), label -> lblRevenueTodayValue = label));
+        // cards.add(createSummaryCard("Most Popular Guest Route", "-", new Color(255, 183, 77), label -> lblPopularRouteValue = label));
+        // cards.add(createSummaryCard("Average Fare per Ticket", "PKR 0", new Color(220, 120, 120), label -> lblAverageFareValue = label));
         wrapper.add(cards);
 
         return wrapper;
@@ -272,100 +277,36 @@ public class PurchaseTicket extends JFrame {
         formColumn.add(formTitle, gbc);
 
         gbc.gridwidth = 1;
-        addLabeledField(formColumn, gbc, 1, "Ticket Type", cmbTicketType = new JComboBox<>(new String[]{"Single Ride", "Return", "[PLACEHOLDER: for FUTURE_PASS_TYPE]"}));
-        addLabeledField(formColumn, gbc, 2, "Passenger Category", cmbPassengerCategory = new JComboBox<>(new String[]{"Adult", "Child", "Senior", "Student"}));
-        addLabeledField(formColumn, gbc, 3, "Route", cmbRoute = new JComboBox<>(ROUTES));
-        addLabeledField(formColumn, gbc, 4, "Direction", cmbDirection = new JComboBox<>(new String[]{"Outbound", "Inbound", "Loop"}));
-        addLabeledField(formColumn, gbc, 5, "Passenger Count", spnPassengerCount = new JSpinner(new SpinnerNumberModel(1, 1, 50, 1)));
-        addLabeledField(formColumn, gbc, 6, "Validity", cmbValidity = new JComboBox<>(new String[]{"Today only", "24 hours", "[PLACEHOLDER: FUTURE_VALIDITY_OPTION]"}));
-        addLabeledField(formColumn, gbc, 7, "Payment Method", cmbPaymentMethod = new JComboBox<>(new String[]{"Cash", "Card", "Other"}));
-        addLabeledField(formColumn, gbc, 8, "Guest Name (optional)", txtGuestName = new JTextField());
-        addLabeledField(formColumn, gbc, 9, "Guest Phone (optional)", txtGuestPhone = new JTextField());
+        // addLabeledField(formColumn, gbc, 1, "Ticket Type", cmbTicketType = new JComboBox<>(new String[]{"Single Ride", "Return", "[PLACEHOLDER: for FUTURE_PASS_TYPE]"}));
+        // addLabeledField(formColumn, gbc, 2, "Passenger Category", cmbPassengerCategory = new JComboBox<>(new String[]{"Adult", "Child", "Senior", "Student"}));
+        addLabeledField(formColumn, gbc, 1, "Route", cmbRoute = new JComboBox<>(routeNames));
+        // addLabeledField(formColumn, gbc, 2, "Direction", cmbDirection = new JComboBox<>(new String[]{"Outbound", "Inbound", "Loop"}));
+        // addLabeledField(formColumn, gbc, 5, "Passenger Count", spnPassengerCount = new JSpinner(new SpinnerNumberModel(1, 1, 50, 1)));
+        // addLabeledField(formColumn, gbc, 6, "Validity", cmbValidity = new JComboBox<>(new String[]{"Today only", "24 hours", "[PLACEHOLDER: FUTURE_VALIDITY_OPTION]"}));
+        addLabeledField(formColumn, gbc, 2, "Payment Method", cmbPaymentMethod = new JComboBox<>(new String[]{"Cash", "Card", "Wallet"}));
+        addLabeledField(formColumn, gbc, 3, "Passenger ID (optional)", txtPassengerID = new JTextField());
+        addLabeledField(formColumn, gbc, 4, "Card Details (if applicable)", txtCardDetails = new JTextField());
+        // addLabeledField(formColumn, gbc, 9, "Guest Phone (optional)", txtGuestPhone = new JTextField());
 
-        JPanel fareSummary = createFareSummaryPanel();
-        gbc.gridx = 0;
-        gbc.gridy = 10;
-        gbc.gridwidth = 2;
-        formColumn.add(fareSummary, gbc);
+        // JPanel fareSummary = createFareSummaryPanel();
+        // gbc.gridx = 0;
+        // gbc.gridy = 10;
+        // gbc.gridwidth = 2;
+        // formColumn.add(fareSummary, gbc);
 
-        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        buttonRow.setOpaque(false);
-        JButton btnCalculate = new JButton("Calculate Fare");
-        stylePrimaryButton(btnCalculate);
-        btnCalculate.addActionListener(e -> calculateAndDisplayFare());
         JButton btnIssue = new JButton("Issue Ticket");
-        styleSecondaryButton(btnIssue);
+        stylePrimaryButton(btnIssue);
         btnIssue.addActionListener(e -> issueGuestTicket());
-        buttonRow.add(btnCalculate);
-        buttonRow.add(btnIssue);
+        // buttonRow.add(btnIssue);
 
         gbc.gridy = 11;
-        formColumn.add(buttonRow, gbc);
+        formColumn.add(btnIssue, gbc);
 
         card.add(formColumn, BorderLayout.CENTER);
-        card.add(createTicketPreviewPanel(), BorderLayout.EAST);
         return card;
     }
 
-    private JPanel createRecentTicketsSection() {
-        JPanel card = new RoundedPanel(18);
-        card.setBackground(CARD_BACKGROUND);
-        card.setBorder(new EmptyBorder(24, 24, 24, 24));
-        card.setLayout(new BorderLayout(0, 16));
 
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        JLabel lblHeader = new JLabel("Recent Guest Tickets");
-        lblHeader.setFont(getCustomFont(Font.BOLD, 20));
-        lblHeader.setForeground(TEXT_PRIMARY);
-        header.add(lblHeader, BorderLayout.WEST);
-
-        cmbRecentRouteFilter = new JComboBox<>();
-        cmbRecentRouteFilter.addItem("All Routes");
-        for (String route : ROUTES) {
-            cmbRecentRouteFilter.addItem(route);
-        }
-        styleInputField(cmbRecentRouteFilter);
-        cmbRecentRouteFilter.setPreferredSize(new Dimension(150, 32));
-        cmbRecentRouteFilter.addActionListener(e -> refreshRecentTicketsTable());
-        header.add(cmbRecentRouteFilter, BorderLayout.EAST);
-
-        card.add(header, BorderLayout.NORTH);
-
-        guestTicketTableModel = new DefaultTableModel(new Object[]{
-                "Ticket ID", "Route", "Ticket Type", "Passenger Category", "Passenger Count", "Total Fare", "Payment Method", "Issued At"
-        }, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        tblGuestTickets = new JTable(guestTicketTableModel);
-        tblGuestTickets.setRowHeight(40);
-        tblGuestTickets.setFont(getCustomFont(Font.PLAIN, 13));
-        tblGuestTickets.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting()) {
-                    handleTableSelection();
-                }
-            }
-        });
-        JScrollPane scrollPane = new JScrollPane(tblGuestTickets);
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setBorder(BorderFactory.createLineBorder(LIGHT_BORDER));
-        JScrollBar tableVBar = scrollPane.getVerticalScrollBar();
-        tableVBar.setUnitIncrement(20);
-        tableVBar.setUI(new ModernScrollBarUI());
-        JScrollBar tableHBar = scrollPane.getHorizontalScrollBar();
-        if (tableHBar != null) {
-            tableHBar.setUI(new ModernScrollBarUI());
-        }
-        card.add(scrollPane, BorderLayout.CENTER);
-
-        return card;
-    }
 
     private JPanel createSummaryCard(String title, String defaultValue, Color accentColor, java.util.function.Consumer<JLabel> valueConsumer) {
         JPanel card = new RoundedPanel(18);
@@ -404,6 +345,107 @@ public class PurchaseTicket extends JFrame {
         return card;
     }
 
+    private JPanel createCheckInOutSection() {
+        JPanel wrapper = new JPanel();
+        wrapper.setOpaque(false);
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+        
+        JLabel sectionTitle = new JLabel("Check-In / Check-Out Operations");
+        sectionTitle.setFont(getCustomFont(Font.BOLD, 24));
+        sectionTitle.setForeground(TEXT_PRIMARY);
+        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        wrapper.add(sectionTitle);
+        wrapper.add(Box.createVerticalStrut(18));
+        
+        JPanel cardsRow = new JPanel(new GridLayout(1, 2, 18, 0));
+        cardsRow.setOpaque(false);
+        cardsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        cardsRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 400));
+        
+        // Check-in card
+        cardsRow.add(createCheckInCard());
+        
+        // Check-out card
+        cardsRow.add(createCheckOutCard());
+        
+        wrapper.add(cardsRow);
+        
+        return wrapper;
+    }
+    
+    private JPanel createCheckInCard() {
+        JPanel card = new RoundedPanel(18);
+        card.setBackground(CARD_BACKGROUND);
+        card.setBorder(new EmptyBorder(24, 24, 24, 24));
+        card.setLayout(new GridBagLayout());
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        
+        JLabel cardTitle = new JLabel("Check-In");
+        cardTitle.setFont(getCustomFont(Font.BOLD, 20));
+        cardTitle.setForeground(TEXT_PRIMARY);
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        card.add(cardTitle, gbc);
+        
+        gbc.gridwidth = 1;
+        addLabeledField(card, gbc, 1, "Ticket ID", txtCheckInTicketID = new JTextField());
+        addLabeledField(card, gbc, 2, "Bus ID", txtCheckInBusID = new JTextField());
+        addLabeledField(card, gbc, 3, "Boarding Station ID", txtCheckInStationID = new JTextField());
+        
+        JButton btnCheckIn = new JButton("Check In");
+        stylePrimaryButton(btnCheckIn);
+        btnCheckIn.addActionListener(e -> performCheckIn());
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(16, 6, 6, 6);
+        card.add(btnCheckIn, gbc);
+        
+        return card;
+    }
+    
+    private JPanel createCheckOutCard() {
+        JPanel card = new RoundedPanel(18);
+        card.setBackground(CARD_BACKGROUND);
+        card.setBorder(new EmptyBorder(24, 24, 24, 24));
+        card.setLayout(new GridBagLayout());
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 6, 6, 6);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        
+        JLabel cardTitle = new JLabel("Check-Out");
+        cardTitle.setFont(getCustomFont(Font.BOLD, 20));
+        cardTitle.setForeground(TEXT_PRIMARY);
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        card.add(cardTitle, gbc);
+        
+        gbc.gridwidth = 1;
+        addLabeledField(card, gbc, 1, "Ticket ID", txtCheckOutTicketID = new JTextField());
+        addLabeledField(card, gbc, 2, "Arrival Station ID", txtCheckOutStationID = new JTextField());
+        
+        JButton btnCheckOut = new JButton("Check Out");
+        stylePrimaryButton(btnCheckOut);
+        btnCheckOut.addActionListener(e -> performCheckOut());
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(16, 6, 6, 6);
+        card.add(btnCheckOut, gbc);
+        
+        return card;
+    }
+
     private JPanel createFareSummaryPanel() {
         JPanel panel = new RoundedPanel(16);
         panel.setBackground(new Color(250, 250, 250));
@@ -416,15 +458,15 @@ public class PurchaseTicket extends JFrame {
         panel.add(lblHeader);
         panel.add(Box.createVerticalStrut(8));
 
-        lblBaseFare = createSummaryLine(panel, "Base Fare", "PKR 0");
-        lblPassengerMultiplier = createSummaryLine(panel, "Passenger Multiplier", "x1.0");
-        lblDiscountInfo = createSummaryLine(panel, "Ticket/Validity Multipliers", "x1.0");
+        // lblBaseFare = createSummaryLine(panel, "Base Fare", "PKR 0");
+        // lblPassengerMultiplier = createSummaryLine(panel, "Passenger Multiplier", "x1.0");
+        // lblDiscountInfo = createSummaryLine(panel, "Ticket/Validity Multipliers", "x1.0");
 
         panel.add(Box.createVerticalStrut(12));
-        lblTotalFare = new JLabel("PKR 0");
-        lblTotalFare.setFont(getCustomFont(Font.BOLD, 26));
-        lblTotalFare.setForeground(PRIMARY_COLOR);
-        panel.add(lblTotalFare);
+        // lblTotalFare = new JLabel("PKR 0");
+        // lblTotalFare.setFont(getCustomFont(Font.BOLD, 26));
+        // lblTotalFare.setForeground(PRIMARY_COLOR);
+        // panel.add(lblTotalFare);
 
         return panel;
     }
@@ -443,59 +485,6 @@ public class PurchaseTicket extends JFrame {
         row.add(lblValue, BorderLayout.EAST);
 
         parent.add(row);
-        return lblValue;
-    }
-
-    private JPanel createTicketPreviewPanel() {
-        JPanel preview = new RoundedPanel(18);
-        preview.setBackground(new Color(248, 248, 248));
-        preview.setBorder(new EmptyBorder(18, 20, 18, 20));
-        preview.setPreferredSize(new Dimension(360, 0));
-        preview.setLayout(new BoxLayout(preview, BoxLayout.Y_AXIS));
-
-        JLabel lblTitle = new JLabel("Ticket Preview");
-        lblTitle.setFont(getCustomFont(Font.BOLD, 18));
-        lblTitle.setForeground(TEXT_PRIMARY);
-        lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        preview.add(lblTitle);
-        preview.add(Box.createVerticalStrut(14));
-
-        lblPreviewTicketId = createPreviewLine(preview, "Ticket ID", "—");
-        lblPreviewRoute = createPreviewLine(preview, "Route / Direction", "—");
-        lblPreviewTicketType = createPreviewLine(preview, "Ticket Type", "—");
-        lblPreviewPassengerCount = createPreviewLine(preview, "Passengers", "—");
-        lblPreviewTotalFare = createPreviewLine(preview, "Total Fare", "—");
-        lblPreviewValidity = createPreviewLine(preview, "Validity", "—");
-        lblPreviewIssuedAt = createPreviewLine(preview, "Issued At", "—");
-
-        preview.add(Box.createVerticalStrut(16));
-        JLabel qrPlaceholder = new JLabel("[PLACEHOLDER: QR CODE HERE]", SwingConstants.CENTER);
-        qrPlaceholder.setFont(getCustomFont(Font.BOLD, 14));
-        qrPlaceholder.setForeground(TEXT_MUTED);
-        qrPlaceholder.setBorder(BorderFactory.createDashedBorder(TEXT_MUTED));
-        qrPlaceholder.setPreferredSize(new Dimension(280, 160));
-        qrPlaceholder.setAlignmentX(Component.LEFT_ALIGNMENT);
-        preview.add(qrPlaceholder);
-
-        return preview;
-    }
-
-    private JLabel createPreviewLine(JPanel parent, String label, String value) {
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false);
-        row.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel lblKey = new JLabel(label);
-        lblKey.setFont(getCustomFont(Font.PLAIN, 13));
-        lblKey.setForeground(TEXT_MUTED);
-        row.add(lblKey, BorderLayout.WEST);
-
-        JLabel lblValue = new JLabel(value);
-        lblValue.setFont(getCustomFont(Font.BOLD, 14));
-        lblValue.setForeground(TEXT_PRIMARY);
-        row.add(lblValue, BorderLayout.EAST);
-
-        parent.add(row);
-        parent.add(Box.createVerticalStrut(6));
         return lblValue;
     }
 
@@ -580,9 +569,9 @@ public class PurchaseTicket extends JFrame {
         JButton btn = new JButton(text);
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
-        btn.setFont(getCustomFont("Issue Guest Ticket".equals(text) ? Font.BOLD : Font.PLAIN, 14));
-        btn.setForeground("Issue Guest Ticket".equals(text) ? Color.WHITE : SKY);
-        btn.setBackground("Issue Guest Ticket".equals(text) ? SIDEBAR_ACTIVE : SIDEBAR_BACKGROUND);
+        btn.setFont(getCustomFont("Station Management".equals(text) ? Font.BOLD : Font.PLAIN, 14));
+        btn.setForeground("Station Management".equals(text) ? Color.WHITE : SKY);
+        btn.setBackground("Station Management".equals(text) ? SIDEBAR_ACTIVE : SIDEBAR_BACKGROUND);
         btn.setBorder(new EmptyBorder(14, 18, 14, 18));
         btn.setFocusPainted(false);
         btn.setContentAreaFilled(false);
@@ -616,166 +605,234 @@ public class PurchaseTicket extends JFrame {
         dispose();
     }
 
-    private void calculateAndDisplayFare() {
-        if (!validateRequiredFields(false)) {
-            return;
-        }
-        String route = (String) cmbRoute.getSelectedItem();
-        String ticketType = (String) cmbTicketType.getSelectedItem();
-        String category = (String) cmbPassengerCategory.getSelectedItem();
-        String validity = (String) cmbValidity.getSelectedItem();
-        int passengerCount = ((Number) spnPassengerCount.getValue()).intValue();
 
-        double baseFare = getBaseFareForRoute(route);
-        double ticketMultiplier = getTicketTypeMultiplier(ticketType);
-        double categoryMultiplier = getCategoryMultiplier(category);
-        double validityMultiplier = getValidityMultiplier(validity);
-
-        double total = baseFare * passengerCount * ticketMultiplier * categoryMultiplier * validityMultiplier;
-        // TODO: replace fare calculation with real pricing rules
-        lastCalculatedFare = Math.max(50, Math.round(total / 10.0) * 10);
-
-        lblBaseFare.setText(String.format("PKR %,.0f", baseFare));
-        lblPassengerMultiplier.setText(String.format("x %.2f (Passengers %d • %s)", passengerCount * categoryMultiplier, passengerCount, category));
-        lblDiscountInfo.setText(String.format("Ticket %.2f • Validity %.2f", ticketMultiplier, validityMultiplier));
-        lblTotalFare.setText(String.format("PKR %,.0f", lastCalculatedFare));
-    }
 
     private void issueGuestTicket() {
         if (!validateRequiredFields(true)) {
             return;
         }
-        if (lastCalculatedFare <= 0) {
-            calculateAndDisplayFare();
-        }
-        if (lastCalculatedFare <= 0) {
-            JOptionPane.showMessageDialog(this, "Unable to compute fare. Please try again.", "Validation", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
 
-        GuestTicket ticket = new GuestTicket(
-                generateTicketId(),
-                (String) cmbTicketType.getSelectedItem(),
-                (String) cmbPassengerCategory.getSelectedItem(),
-                (String) cmbRoute.getSelectedItem(),
-                (String) cmbDirection.getSelectedItem(),
-                ((Number) spnPassengerCount.getValue()).intValue(),
-                (String) cmbValidity.getSelectedItem(),
-                (String) cmbPaymentMethod.getSelectedItem(),
-                txtGuestName.getText().trim(),
-                txtGuestPhone.getText().trim(),
-                lastCalculatedFare,
-                LocalDateTime.now()
-        );
+        try {
+            // Get selected route
+            String routeName = (String) cmbRoute.getSelectedItem();
+            Route selectedRoute = routes.stream()
+                    .filter(r -> r.getRouteName().equals(routeName))
+                    .findFirst()
+                    .orElse(null);
+                    if (selectedRoute == null) {
+                JOptionPane.showMessageDialog(this, "Selected route is invalid.", "Validation",
+                JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            System.out.println("Selected Route: " + selectedRoute.getRouteName() + ", Cost: " + selectedRoute.getCost());
 
-        // TODO: connect GuestTicket to backend service in future
-        guestTickets.add(ticket);
-        refreshAllViews();
-        updateTicketPreview(ticket);
-        JOptionPane.showMessageDialog(this, "Guest ticket issued successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            // Get payment details
+            String paymentMethod = (String) cmbPaymentMethod.getSelectedItem();
+            String paymentDetails = "";
+            
+            if ("Card".equals(paymentMethod)) {
+                paymentDetails = txtCardDetails.getText().trim();
+            }
+
+            // Get passenger ID if provided
+            String passengerIDText = txtPassengerID.getText().trim();
+            Ticket ticket;
+            
+            // TODO: Get actual boarding station ID from UI or session
+            // For now, using station ID 1 as default
+            int boardingStationID = 1;
+            
+            if (!passengerIDText.isEmpty()) {
+                // Request ticket for registered passenger
+                try {
+                    int passengerID = Integer.parseInt(passengerIDText);
+                    PassengerPersistanceHandler pph = new PassengerPersistanceHandler();
+                    Passenger passenger = (Passenger) pph.find(passengerID);
+                  
+                    if (passenger == null) {
+                        JOptionPane.showMessageDialog(this, "Passenger not found with ID: " + passengerID,
+                                "Validation", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    
+                    ticket = stationRegister.requestTicket(selectedRoute, paymentMethod, passenger,
+                            paymentDetails, boardingStationID);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid Passenger ID format.",
+                            "Validation", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } else {
+                // Request guest ticket (no passenger)
+                
+                ticket = stationRegister.requestTicket(selectedRoute, paymentMethod,
+                        paymentDetails, boardingStationID);
+            }
+            
+            // Store the issued ticket
+            lastIssuedTicket = ticket;
+            lastCalculatedFare = selectedRoute.getCost();
+            
+            // Update summary cards
+            updateSummaryCards();
+            
+            JOptionPane.showMessageDialog(this, "Ticket issued successfully!\nTicket ID: " + ticket.getTicketID(),
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                    
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
+                    "Payment Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "An error occurred while issuing the ticket: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }
 
     private boolean validateRequiredFields(boolean showDialog) {
-        boolean valid = cmbRoute.getSelectedItem() != null
-                && cmbTicketType.getSelectedItem() != null
-                && cmbPaymentMethod.getSelectedItem() != null
-                && ((Number) spnPassengerCount.getValue()).intValue() >= 1;
-        if (!valid && showDialog) {
-            JOptionPane.showMessageDialog(this, "Please fill in the mandatory fields (ticket type, route, passenger count, payment).", "Validation", JOptionPane.WARNING_MESSAGE);
+        String paymentMethod = (String) cmbPaymentMethod.getSelectedItem();
+
+        if (cmbRoute.getSelectedItem() == null || paymentMethod == null) {
+            if (showDialog) {
+                JOptionPane.showMessageDialog(this, "Please select a route and payment method.", "Validation", JOptionPane.WARNING_MESSAGE);
+            }
+            return false;
         }
-        return valid;
+
+        if ("Card".equals(paymentMethod)) {
+            String cardDetails = txtCardDetails.getText().trim();
+            if (cardDetails.isEmpty()) {
+                if (showDialog) {
+                    JOptionPane.showMessageDialog(this, "Card details cannot be empty for card payments.", "Validation", JOptionPane.WARNING_MESSAGE);
+                }
+                return false;
+            }
+            long commaCount = cardDetails.chars().filter(ch -> ch == ',').count();
+            if (commaCount != 2) {
+                if (showDialog) {
+                    JOptionPane.showMessageDialog(this, "Card details must contain exactly two commas.", "Validation", JOptionPane.WARNING_MESSAGE);
+                }
+                return false;
+            }
+        } else if ("Walllet".equals(paymentMethod)) { // Typo in original code
+            if (txtPassengerID.getText().trim().isEmpty()) {
+                if (showDialog) {
+                    JOptionPane.showMessageDialog(this, "Passenger ID is required for Wallet payment.", "Validation", JOptionPane.WARNING_MESSAGE);
+                }
+                return false;
+            }
+        } else if ("Wallet".equals(paymentMethod)) {
+            if (txtPassengerID.getText().trim().isEmpty()) {
+                if (showDialog) {
+                    JOptionPane.showMessageDialog(this, "Passenger ID is required for Wallet payment.", "Validation", JOptionPane.WARNING_MESSAGE);
+                }
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void refreshAllViews() {
         updateSummaryCards();
-        refreshRecentTicketsTable();
-        autoSelectLatestTicket();
     }
 
-    private void autoSelectLatestTicket() {
-        if (tblGuestTickets.getRowCount() > 0) {
-            tblGuestTickets.setRowSelectionInterval(0, 0);
-            handleTableSelection();
-        } else {
-            clearTicketPreview();
-        }
-    }
 
-    private void handleTableSelection() {
-        int selectedRow = tblGuestTickets.getSelectedRow();
-        if (selectedRow < 0) {
-            return;
-        }
-        String ticketId = (String) tblGuestTickets.getValueAt(selectedRow, 0);
-        guestTickets.stream()
-                .filter(ticket -> ticket.ticketId.equals(ticketId))
-                .findFirst()
-                .ifPresent(this::updateTicketPreview);
-    }
-
-    private void refreshRecentTicketsTable() {
-        guestTicketTableModel.setRowCount(0);
-        String routeFilter = cmbRecentRouteFilter.getSelectedItem() != null ? (String) cmbRecentRouteFilter.getSelectedItem() : "All Routes";
-        List<GuestTicket> sorted = guestTickets.stream()
-                .sorted(Comparator.comparing((GuestTicket t) -> t.issuedAt).reversed())
-                .collect(Collectors.toList());
-
-        for (GuestTicket ticket : sorted) {
-            if (!"All Routes".equals(routeFilter) && !ticket.routeId.equals(routeFilter)) {
-                continue;
-            }
-            guestTicketTableModel.addRow(new Object[]{
-                    ticket.ticketId,
-                    ticket.routeId,
-                    ticket.ticketType,
-                    ticket.passengerCategory,
-                    ticket.passengerCount,
-                    String.format("PKR %,.0f", ticket.totalFare),
-                    ticket.paymentMethod,
-                    DISPLAY_FORMATTER.format(ticket.issuedAt)
-            });
-        }
-    }
 
     private void updateSummaryCards() {
-        LocalDate today = LocalDate.now();
-        long ticketsToday = guestTickets.stream().filter(t -> t.issuedAt.toLocalDate().isEqual(today)).count();
-        double revenueToday = guestTickets.stream().filter(t -> t.issuedAt.toLocalDate().isEqual(today)).mapToDouble(t -> t.totalFare).sum();
-        Map<String, Long> routeCounts = guestTickets.stream().collect(Collectors.groupingBy(t -> t.routeId, Collectors.counting()));
-        String popularRoute = routeCounts.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(entry -> entry.getKey() + " – " + getRouteDescriptor(entry.getKey()))
-                .orElse("R1 – City Center");
-        double avgFare = guestTickets.isEmpty() ? 0.0 : guestTickets.stream().mapToDouble(t -> t.totalFare).average().orElse(0.0);
-
-        lblTicketsTodayValue.setText(String.valueOf(ticketsToday));
-        lblRevenueTodayValue.setText(String.format("PKR %,.0f", revenueToday));
-        lblPopularRouteValue.setText(popularRoute);
-        lblAverageFareValue.setText(String.format("PKR %,.0f", avgFare));
+        // TODO: Update this with real data
+    }
+    
+    private void performCheckIn() {
+        try {
+            // Validate inputs
+            String ticketIDText = txtCheckInTicketID.getText().trim();
+            String busIDText = txtCheckInBusID.getText().trim();
+            String stationIDText = txtCheckInStationID.getText().trim();
+            
+            if (ticketIDText.isEmpty() || busIDText.isEmpty() || stationIDText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Please fill in all required fields (Ticket ID, Bus ID, and Boarding Station ID).", 
+                    "Validation Error", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            int ticketID = Integer.parseInt(ticketIDText);
+            int busID = Integer.parseInt(busIDText);
+            int boardingStationID = Integer.parseInt(stationIDText);
+            
+            // Perform check-in
+            stationRegister.checkIn(ticketID, busID, boardingStationID);
+            
+            // Clear fields after successful check-in
+            txtCheckInTicketID.setText("");
+            txtCheckInBusID.setText("");
+            txtCheckInStationID.setText("");
+            
+            JOptionPane.showMessageDialog(this, 
+                "Check-in completed successfully!", 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Please enter valid numeric values for Ticket ID, Bus ID, and Station ID.", 
+                "Invalid Input", 
+                JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Check-in failed: " + ex.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    
+    private void performCheckOut() {
+        try {
+            // Validate inputs
+            String ticketIDText = txtCheckOutTicketID.getText().trim();
+            String stationIDText = txtCheckOutStationID.getText().trim();
+            
+            if (ticketIDText.isEmpty() || stationIDText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Please fill in all required fields (Ticket ID and Arrival Station ID).", 
+                    "Validation Error", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            int ticketID = Integer.parseInt(ticketIDText);
+            int arrivalStationID = Integer.parseInt(stationIDText);
+            
+            // Perform check-out
+            stationRegister.checkOut(ticketID, arrivalStationID);
+            
+            // Clear fields after successful check-out
+            txtCheckOutTicketID.setText("");
+            txtCheckOutStationID.setText("");
+            
+            JOptionPane.showMessageDialog(this, 
+                "Check-out completed successfully!", 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Please enter valid numeric values for Ticket ID and Station ID.", 
+                "Invalid Input", 
+                JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Check-out failed: " + ex.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }
 
-    private void updateTicketPreview(GuestTicket ticket) {
-        lblPreviewTicketId.setText(ticket.ticketId);
-        lblPreviewRoute.setText(ticket.routeId + " • " + ticket.direction);
-        lblPreviewTicketType.setText(ticket.ticketType + " (" + ticket.passengerCategory + ")");
-        String guestNameDisplay = (ticket.guestName == null || ticket.guestName.isBlank()) ? "Walk-up Guest" : ticket.guestName;
-        String guestPhoneDisplay = (ticket.guestPhone == null || ticket.guestPhone.isBlank()) ? "N/A" : ticket.guestPhone;
-        lblPreviewPassengerCount.setText(ticket.passengerCount + " passenger(s) • " + guestNameDisplay);
-        lblPreviewPassengerCount.setToolTipText("Contact: " + guestPhoneDisplay);
-        lblPreviewTotalFare.setText(String.format("PKR %,.0f", ticket.totalFare));
-        lblPreviewValidity.setText(ticket.validity);
-        lblPreviewIssuedAt.setText(DISPLAY_FORMATTER.format(ticket.issuedAt));
-    }
 
-    private void clearTicketPreview() {
-        lblPreviewTicketId.setText("—");
-        lblPreviewRoute.setText("—");
-        lblPreviewTicketType.setText("—");
-        lblPreviewPassengerCount.setText("—");
-        lblPreviewTotalFare.setText("—");
-        lblPreviewValidity.setText("—");
-        lblPreviewIssuedAt.setText("—");
-    }
 
     private String generateTicketId() {
         ticketSequence++;
@@ -867,19 +924,7 @@ public class PurchaseTicket extends JFrame {
         }
     }
 
-    private void seedMockTickets() {
-        guestTickets.clear();
-        guestTickets.add(new GuestTicket("GT-2025-000101", "Single Ride", "Adult", "R1", "Outbound", 1,
-                "Today only", "Cash", "Visitor One", "0300-0000001", 80, LocalDateTime.now().minusHours(1)));
-        guestTickets.add(new GuestTicket("GT-2025-000102", "Return", "Student", "R2", "Inbound", 2,
-                "24 hours", "Card", "Student Duo", "0300-0000002", 210, LocalDateTime.now().minusHours(3)));
-        guestTickets.add(new GuestTicket("GT-2025-000103", "Single Ride", "Senior", "R3", "Outbound", 1,
-                "Today only", "Cash", "", "", 60, LocalDateTime.now().minusDays(1)));
-        guestTickets.add(new GuestTicket("GT-2025-000104", "Return", "Adult", "R1", "Inbound", 3,
-                "24 hours", "Card", "Family", "0300-0000003", 360, LocalDateTime.now().minusHours(5)));
-        guestTickets.add(new GuestTicket("GT-2025-000105", "Single Ride", "Child", "R4", "Loop", 2,
-                "Today only", "Cash", "", "", 90, LocalDateTime.now().minusDays(2)));
-    }
+
 
     private Font getCustomFont(int style, float size) {
         try {
@@ -968,35 +1013,5 @@ public class PurchaseTicket extends JFrame {
         }
     }
 
-    private static class GuestTicket {
-        private final String ticketId;
-        private final String ticketType;
-        private final String passengerCategory;
-        private final String routeId;
-        private final String direction;
-        private final int passengerCount;
-        private final String validity;
-        private final String paymentMethod;
-        private final String guestName;
-        private final String guestPhone;
-        private final double totalFare;
-        private final LocalDateTime issuedAt;
 
-        private GuestTicket(String ticketId, String ticketType, String passengerCategory, String routeId,
-                             String direction, int passengerCount, String validity, String paymentMethod,
-                             String guestName, String guestPhone, double totalFare, LocalDateTime issuedAt) {
-            this.ticketId = ticketId;
-            this.ticketType = ticketType;
-            this.passengerCategory = passengerCategory;
-            this.routeId = routeId;
-            this.direction = direction;
-            this.passengerCount = passengerCount;
-            this.validity = validity;
-            this.paymentMethod = paymentMethod;
-            this.guestName = guestName;
-            this.guestPhone = guestPhone;
-            this.totalFare = totalFare;
-            this.issuedAt = issuedAt;
-        }
-    }
 }

@@ -5,6 +5,7 @@ import com.metromanage.model.PassengerPersistanceHandler;
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.DB;
 import com.metromanage.model.RoutePersistanceHandler;
+import com.metromanage.ui.PurchaseTicket;
 import com.metromanage.ui.WelcomePage;
 import javax.swing.SwingUtilities;
 import com.metromanage.domain.AdminRegister;
@@ -39,8 +40,10 @@ public class Main{
         SwingUtilities.invokeLater(() -> {
 
            // Create ONLY the welcome page and show it
-           WelcomePage welcomePage = new WelcomePage();
-           welcomePage.setVisible(true);
+        //    WelcomePage welcomePage = new WelcomePage();
+            //    welcomePage.setVisible(true);
+        PurchaseTicket purchaseTicket = new PurchaseTicket();
+        purchaseTicket.setVisible(true);
 
        });
     }
