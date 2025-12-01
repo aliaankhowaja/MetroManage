@@ -6,8 +6,12 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import javax.imageio.ImageIO;
+
+import com.metromanage.domain.LoginHandler;
 
 /**
  * LoginPage - Modern login interface for MetroManage.
@@ -42,8 +46,9 @@ public class LoginPage extends JFrame {
     private void initializeUI() {
         setTitle("Login - MetroManage");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1000, 650);
+        setSize(1100, 750);
         setLocationRelativeTo(null);
+        setResizable(true);
 
         // Root panel with gradient background
         rootPanel = new GradientPanel();
@@ -78,8 +83,8 @@ public class LoginPage extends JFrame {
         JPanel card = new RoundedPanel(20);
         card.setBackground(CARD_BACKGROUND);
         card.setLayout(new BorderLayout());
-        card.setPreferredSize(new Dimension(450, 550));
-        card.setBorder(new EmptyBorder(40, 50, 40, 50));
+        card.setPreferredSize(new Dimension(450, 620));
+        card.setBorder(new EmptyBorder(30, 50, 30, 50));
 
         // Content panel
         JPanel contentPanel = new JPanel();
@@ -89,7 +94,7 @@ public class LoginPage extends JFrame {
         // Logo/Brand Section
         JPanel logoPanel = createLogoPanel();
         contentPanel.add(logoPanel);
-        contentPanel.add(Box.createVerticalStrut(40));
+        contentPanel.add(Box.createVerticalStrut(25));
 
         // Welcome text
         JLabel lblWelcome = new JLabel("Welcome Back!");
@@ -97,14 +102,14 @@ public class LoginPage extends JFrame {
         lblWelcome.setForeground(TEXT_PRIMARY);
         lblWelcome.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(lblWelcome);
-        contentPanel.add(Box.createVerticalStrut(8));
+        contentPanel.add(Box.createVerticalStrut(5));
 
         JLabel lblSubtext = new JLabel("Please login to continue");
         lblSubtext.setFont(getCustomFont(Font.PLAIN, 14));
         lblSubtext.setForeground(TEXT_MUTED);
         lblSubtext.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(lblSubtext);
-        contentPanel.add(Box.createVerticalStrut(35));
+        contentPanel.add(Box.createVerticalStrut(25));
 
         // Email field
         JLabel lblEmail = new JLabel("Email Address");
@@ -115,8 +120,17 @@ public class LoginPage extends JFrame {
         contentPanel.add(Box.createVerticalStrut(8));
 
         txtEmail = createStyledTextField("Enter your email");
+        // Add Enter key listener to move to password field
+        txtEmail.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    txtPassword.requestFocus();
+                }
+            }
+        });
         contentPanel.add(txtEmail);
-        contentPanel.add(Box.createVerticalStrut(20));
+        contentPanel.add(Box.createVerticalStrut(15));
 
         // Password field
         JLabel lblPassword = new JLabel("Password");
@@ -127,6 +141,15 @@ public class LoginPage extends JFrame {
         contentPanel.add(Box.createVerticalStrut(8));
 
         txtPassword = createStyledPasswordField("Enter your password");
+        // Add Enter key listener to trigger login
+        txtPassword.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    handleLogin();
+                }
+            }
+        });
         contentPanel.add(txtPassword);
         contentPanel.add(Box.createVerticalStrut(15));
 
@@ -161,13 +184,13 @@ public class LoginPage extends JFrame {
         forgotPanel.add(lblForgotPassword);
         forgotPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(forgotPanel);
-        contentPanel.add(Box.createVerticalStrut(25));
+        contentPanel.add(Box.createVerticalStrut(20));
 
         // Login button
         btnLogin = createStyledButton("LOGIN");
         btnLogin.addActionListener(e -> handleLogin());
         contentPanel.add(btnLogin);
-        contentPanel.add(Box.createVerticalStrut(25));
+        contentPanel.add(Box.createVerticalStrut(20));
 
         // Sign up link
         JPanel signUpPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
@@ -388,9 +411,11 @@ public class LoginPage extends JFrame {
         button.setForeground(Color.WHITE);
         button.setPreferredSize(new Dimension(350, 50));
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        button.setMinimumSize(new Dimension(350, 50));
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
+        button.setOpaque(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setAlignmentX(Component.LEFT_ALIGNMENT);
         
@@ -398,36 +423,59 @@ public class LoginPage extends JFrame {
     }
 
     private void handleLogin() {
-        String email = txtEmail.getText();
-        String password = String.valueOf(txtPassword.getPassword());
-        
-        // Placeholder validation
-        if (email.equals("Enter your email") || email.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
-                "Please enter your email address", 
-                "Login Error", 
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (password.equals("Enter your password") || password.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
-                "Please enter your password", 
-                "Login Error", 
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // For demo purposes - show success message
+    String email = txtEmail.getText();
+    String password = String.valueOf(txtPassword.getPassword());
+    
+    // Placeholder validation
+    if (email.equals("Enter your email") || email.trim().isEmpty()) {
         JOptionPane.showMessageDialog(this, 
-            "Login functionality will be connected to database!", 
-            "Login", 
-            JOptionPane.INFORMATION_MESSAGE);
-        
-        // Open dashboard (placeholder)
-        new DashBoard();
-        dispose();
+            "Please enter your email address", 
+            "Login Error", 
+            JOptionPane.ERROR_MESSAGE);
+        return;
     }
+    
+    if (password.equals("Enter your password") || password.trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, 
+            "Please enter your password", 
+            "Login Error", 
+            JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+    
+    // Use the backend LoginHandler
+    LoginHandler loginHandler = new LoginHandler();
+    int result = loginHandler.login(email, password);
+    
+    switch (result) {
+        case 0:  // Success
+            JOptionPane.showMessageDialog(this, 
+                "Login successful!", 
+                "Welcome", 
+                JOptionPane.INFORMATION_MESSAGE);
+            new DashBoard();
+            dispose();
+            break;
+        case 1:  // Already logged in
+            JOptionPane.showMessageDialog(this, 
+                "A user is already logged in.", 
+                "Login Error", 
+                JOptionPane.WARNING_MESSAGE);
+            break;
+        case 2:  // Invalid email
+            JOptionPane.showMessageDialog(this, 
+                "No account found with this email.", 
+                "Login Error", 
+                JOptionPane.ERROR_MESSAGE);
+            break;
+        case 3:  // Invalid password
+            JOptionPane.showMessageDialog(this, 
+                "Incorrect password.", 
+                "Login Error", 
+                JOptionPane.ERROR_MESSAGE);
+            break;
+    }
+}
 
     private void handleSignUp() {
         JOptionPane.showMessageDialog(this, 

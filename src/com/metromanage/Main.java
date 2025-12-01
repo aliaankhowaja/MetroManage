@@ -27,7 +27,7 @@ public class Main{
         //manageBusTest();
         //allocateBusTest();
         //searchPassengerTest();
-        searchBusTest();
+        //searchBusTest();
         // DB.createTables();
         // generateTestData();
         // loginTest();
