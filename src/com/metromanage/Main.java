@@ -28,7 +28,7 @@ public class Main{
         //manageBusTest();
         //allocateBusTest();
         //searchPassengerTest();
-        searchBusTest();
+        // searchBusTest();
         // DB.createTables();
         // generateTestData();
         // loginTest();
@@ -39,11 +39,9 @@ public class Main{
         //scheduleTest();
         SwingUtilities.invokeLater(() -> {
 
-           // Create ONLY the welcome page and show it
-        //    WelcomePage welcomePage = new WelcomePage();
-            //    welcomePage.setVisible(true);
-        PurchaseTicket purchaseTicket = new PurchaseTicket();
-        purchaseTicket.setVisible(true);
+            // Create ONLY the welcome page and show it
+            WelcomePage welcomePage = new WelcomePage();
+            welcomePage.setVisible(true);
 
        });
     }

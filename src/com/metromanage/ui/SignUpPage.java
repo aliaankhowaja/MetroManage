@@ -6,8 +6,13 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+
+import com.metromanage.domain.AdminRegister;
+import com.metromanage.domain.Passenger;
 
 /**
  * Modern Sign Up page for MetroManage application
@@ -36,9 +41,9 @@ public class SignUpPage extends JFrame {
     private void initializeUI() {
         setTitle("Sign Up - MetroManage");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1100, 700);
+        setSize(1100, 850);
         setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(true);
 
         // Create gradient background panel
         JPanel rootPanel = new GradientPanel();
@@ -55,9 +60,9 @@ public class SignUpPage extends JFrame {
     private JPanel createSignUpCard() {
         RoundedPanel card = new RoundedPanel(25);
         card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(480, 600));
+        card.setPreferredSize(new Dimension(480, 750));
         card.setLayout(new BorderLayout());
-        card.setBorder(new EmptyBorder(40, 50, 40, 50));
+        card.setBorder(new EmptyBorder(30, 50, 30, 50));
 
         // Card content
         JPanel content = new JPanel();
@@ -68,52 +73,52 @@ public class SignUpPage extends JFrame {
         JPanel logoPanel = createLogoPanel();
         logoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         content.add(logoPanel);
-        content.add(Box.createVerticalStrut(25));
+        content.add(Box.createVerticalStrut(15));
 
         // Title
         JLabel lblTitle = new JLabel("Create Account");
-        lblTitle.setFont(getCustomFont(Font.BOLD, 32));
+        lblTitle.setFont(getCustomFont(Font.BOLD, 28));
         lblTitle.setForeground(TEXT_PRIMARY);
         lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         content.add(lblTitle);
 
-        content.add(Box.createVerticalStrut(8));
+        content.add(Box.createVerticalStrut(5));
 
         // Subtitle
         JLabel lblSubtitle = new JLabel("Join MetroManage and start your journey");
-        lblSubtitle.setFont(getCustomFont(Font.PLAIN, 14));
+        lblSubtitle.setFont(getCustomFont(Font.PLAIN, 13));
         lblSubtitle.setForeground(TEXT_SECONDARY);
         lblSubtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         content.add(lblSubtitle);
 
-        content.add(Box.createVerticalStrut(30));
+        content.add(Box.createVerticalStrut(20));
 
         // Name field
         content.add(createInputField("Full Name", false));
-        content.add(Box.createVerticalStrut(18));
+        content.add(Box.createVerticalStrut(12));
 
         // Email field
         content.add(createInputField("Email Address", false));
-        content.add(Box.createVerticalStrut(18));
+        content.add(Box.createVerticalStrut(12));
 
         // Phone field
         content.add(createInputField("Phone Number", false));
-        content.add(Box.createVerticalStrut(18));
+        content.add(Box.createVerticalStrut(12));
 
         // Password field
         content.add(createInputField("Password", true));
-        content.add(Box.createVerticalStrut(18));
+        content.add(Box.createVerticalStrut(12));
 
         // Confirm Password field
         content.add(createInputField("Confirm Password", true));
-        content.add(Box.createVerticalStrut(25));
+        content.add(Box.createVerticalStrut(20));
 
         // Sign Up button
         btnSignUp = createSignUpButton();
         btnSignUp.setAlignmentX(Component.CENTER_ALIGNMENT);
         content.add(btnSignUp);
 
-        content.add(Box.createVerticalStrut(20));
+        content.add(Box.createVerticalStrut(15));
 
         // Login link
         JPanel loginPanel = createLoginLinkPanel();
@@ -166,7 +171,7 @@ public class SignUpPage extends JFrame {
         JPanel fieldPanel = new JPanel();
         fieldPanel.setLayout(new BorderLayout());
         fieldPanel.setOpaque(false);
-        fieldPanel.setMaximumSize(new Dimension(380, 75));
+        fieldPanel.setMaximumSize(new Dimension(380, 65));
 
         // Label
         JLabel label = new JLabel(placeholder);
@@ -182,6 +187,15 @@ public class SignUpPage extends JFrame {
                 txtPassword = (JPasswordField) inputField;
             } else {
                 txtConfirmPassword = (JPasswordField) inputField;
+                // Add Enter key listener to trigger sign up
+                txtConfirmPassword.addKeyListener(new KeyAdapter() {
+                    @Override
+                    public void keyPressed(KeyEvent e) {
+                        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                            handleSignUp();
+                        }
+                    }
+                });
             }
         } else {
             inputField = new JTextField();
@@ -194,11 +208,11 @@ public class SignUpPage extends JFrame {
             }
         }
 
-        inputField.setFont(getCustomFont(Font.PLAIN, 15));
-        inputField.setPreferredSize(new Dimension(380, 45));
+        inputField.setFont(getCustomFont(Font.PLAIN, 14));
+        inputField.setPreferredSize(new Dimension(380, 40));
         inputField.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
         ));
 
         // Add focus effects
@@ -206,14 +220,14 @@ public class SignUpPage extends JFrame {
             public void focusGained(java.awt.event.FocusEvent e) {
                 inputField.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(PRIMARY_COLOR, 2, true),
-                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                        BorderFactory.createEmptyBorder(8, 12, 8, 12)
                 ));
             }
 
             public void focusLost(java.awt.event.FocusEvent e) {
                 inputField.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                        BorderFactory.createEmptyBorder(8, 12, 8, 12)
                 ));
             }
         });
@@ -228,39 +242,46 @@ public class SignUpPage extends JFrame {
     }
 
     private JButton createSignUpButton() {
-        JButton button = new JButton("Create Account");
+        JButton button = new JButton("Create Account") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) {
+                    g2.setColor(PRIMARY_COLOR.darker());
+                } else if (getModel().isRollover()) {
+                    g2.setColor(PRIMARY_COLOR.brighter());
+                } else {
+                    g2.setColor(PRIMARY_COLOR);
+                }
+                
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                
+                // Draw text
+                g2.setColor(Color.WHITE);
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2.drawString(getText(), x, y);
+                
+                g2.dispose();
+            }
+        };
         button.setFont(getCustomFont(Font.BOLD, 16));
         button.setForeground(Color.WHITE);
         button.setBackground(PRIMARY_COLOR);
         button.setPreferredSize(new Dimension(380, 50));
         button.setMaximumSize(new Dimension(380, 50));
+        button.setMinimumSize(new Dimension(380, 50));
         button.setFocusPainted(false);
         button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Rounded button
-        button.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
-            @Override
-            public void paint(Graphics g, JComponent c) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (button.getModel().isPressed()) {
-                    g2.setColor(PRIMARY_COLOR.darker());
-                } else if (button.getModel().isRollover()) {
-                    g2.setColor(PRIMARY_COLOR.brighter());
-                } else {
-                    g2.setColor(button.getBackground());
-                }
-                
-                g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 12, 12);
-                g2.dispose();
-                
-                super.paint(g, c);
-            }
-        });
-
-        // Add action listener (no backend - just show success message)
+        // Add action listener
         button.addActionListener(e -> handleSignUp());
 
         return button;
@@ -368,11 +389,25 @@ public class SignUpPage extends JFrame {
             return;
         }
 
-        // Show success message (no backend connection)
+        // Use AdminRegister to create the passenger
+        AdminRegister adminRegister = new AdminRegister();
+        Passenger newPassenger = adminRegister.addPassenger(name, email, phone, password, 0.0f);
+        
+        if (newPassenger == null) {
+            // Email already exists
+            JOptionPane.showMessageDialog(
+                this,
+                "An account with this email already exists.\nPlease use a different email or login.",
+                "Registration Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        // Show success message
         JOptionPane.showMessageDialog(
             this,
-            "Account created successfully!\n\nName: " + name + "\nEmail: " + email + "\nPhone: " + phone + 
-            "\n\n(Note: Backend connection not implemented yet)",
+            "Account created successfully!\n\nName: " + name + "\nEmail: " + email + "\n\nYou can now login with your credentials.",
             "Success",
             JOptionPane.INFORMATION_MESSAGE
         );
