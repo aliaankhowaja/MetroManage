@@ -691,7 +691,7 @@ public class ViewSchedule extends JFrame {
             lblSelectedRouteName.setText("Route: " + selectedRoute.getRouteName());
             lblRouteDistance.setText(String.format("Distance: %.1f km", selectedRoute.getTotalDistance()));
             lblRouteTime.setText(String.format("Est. Time: %d min", selectedRoute.getEstimatedTime()));
-            lblRouteCost.setText(String.format("Cost: $%.2f", selectedRoute.getCost()));
+            lblRouteCost.setText(String.format("Cost: PKR%.2f", selectedRoute.getCost()));
         }
     }
 

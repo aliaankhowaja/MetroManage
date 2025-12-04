@@ -477,7 +477,7 @@ public class ManageUsers extends JFrame {
                 
                 // Format as currency
                 if (value != null) {
-                    label.setText("$" + String.format("%.2f", value));
+                    label.setText("PKR " + String.format("%.2f", value));
                 }
                 
                 return label;
