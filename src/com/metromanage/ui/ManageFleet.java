@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 
 import com.metromanage.domain.AdminRegister;
 import com.metromanage.domain.Bus;
+import com.metromanage.domain.LoginHandler;
 import com.metromanage.domain.Route;
 import com.metromanage.model.BusPersistanceHandler;
 import com.metromanage.model.RoutePersistanceHandler;
@@ -903,6 +904,7 @@ public class ManageFleet extends JFrame {
                     JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
+                    new LoginHandler().adminLogout();
                     new WelcomePage();
                     dispose();
                 }

@@ -2,6 +2,7 @@ package com.metromanage.domain;
 
 public class SessionManager {
     private static Passenger loggedInPassenger = null;
+    private static Admin loggedInAdmin = null;
 
     public static Passenger getLoggedInPassenger() {
         return loggedInPassenger;
@@ -12,7 +13,7 @@ public class SessionManager {
     }
 
     public static boolean isLoggedIn() {
-        return loggedInPassenger != null;
+        return loggedInPassenger != null || loggedInAdmin != null;
     }
 
     public static void createSession(Passenger passenger) {
@@ -21,6 +22,19 @@ public class SessionManager {
 
     public static void logout() {
         loggedInPassenger = null;
+        loggedInAdmin = null;
+    }
+
+    public static void createAdminSession(Admin admin) {
+        loggedInAdmin = admin;
+    }
+
+    public static Admin getLoggedInAdmin() {
+        return loggedInAdmin;
+    }
+
+    public static boolean isAdminLoggedIn() {
+        return loggedInAdmin != null;
     }
     
 }

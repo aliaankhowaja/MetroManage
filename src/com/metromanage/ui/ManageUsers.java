@@ -11,6 +11,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import com.metromanage.domain.AdminRegister;
+import com.metromanage.domain.LoginHandler;
 import com.metromanage.domain.Passenger;
 import com.metromanage.model.PassengerPersistanceHandler;
 
@@ -840,6 +841,7 @@ public class ManageUsers extends JFrame {
                     JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
+                    new LoginHandler().adminLogout();
                     new WelcomePage();
                     dispose();
                 }

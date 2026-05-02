@@ -7,6 +7,7 @@ import javax.swing.table.JTableHeader;
 
 import com.metromanage.domain.Route;
 import com.metromanage.domain.Station;
+import com.metromanage.domain.LoginHandler;
 import com.metromanage.model.RoutePersistanceHandler;
 import com.metromanage.model.RouteStationPersistanceHandler;
 import com.metromanage.model.StationPersistanceHandler;
@@ -772,6 +773,7 @@ public class ViewSchedule extends JFrame {
                     JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
+                    new LoginHandler().adminLogout();
                     new WelcomePage();
                     dispose();
                 }

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import com.metromanage.model.FeedbackPersistanceHandler;
 import com.metromanage.model.FeedbackPersistanceHandler.FeedbackWithPassenger;
+import com.metromanage.domain.LoginHandler;
 
 /**
  * Admin feedback dashboard connected to database.
@@ -881,6 +882,7 @@ public class ViewFeedback extends JFrame {
                         JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
+                    new LoginHandler().adminLogout();
                     new WelcomePage();
                     dispose();
                 }

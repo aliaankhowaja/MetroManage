@@ -11,8 +11,9 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 
-import com.metromanage.domain.AdminRegister;
+import com.metromanage.domain.Admin;
 import com.metromanage.domain.Passenger;
+import com.metromanage.model.AdminPersistanceHandler;
 
 /**
  * Modern Sign Up page for MetroManage application
@@ -389,15 +390,23 @@ public class SignUpPage extends JFrame {
             return;
         }
 
-        // Use AdminRegister to create the passenger
-        AdminRegister adminRegister = new AdminRegister();
-        Passenger newPassenger = adminRegister.addPassenger(name, email, phone, password, 0.0f);
-        
-        if (newPassenger == null) {
-            // Email already exists
+        AdminPersistanceHandler adminPersistanceHandler = new AdminPersistanceHandler();
+        if (adminPersistanceHandler.findByEmail(email) != null) {
             JOptionPane.showMessageDialog(
                 this,
                 "An account with this email already exists.\nPlease use a different email or login.",
+                "Registration Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        String passwordHash = Passenger.GenerateHash(password);
+        Admin admin = new Admin(name, email, passwordHash);
+        if (admin.getAdminID() == 0) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Could not create admin account. Please try again.",
                 "Registration Error",
                 JOptionPane.ERROR_MESSAGE
             );

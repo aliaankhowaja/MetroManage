@@ -1,12 +1,15 @@
 package com.metromanage.domain;
 
 import com.metromanage.model.PassengerPersistanceHandler;
+import com.metromanage.model.AdminPersistanceHandler;
 
 public class LoginHandler {
     PassengerPersistanceHandler pph;
+    AdminPersistanceHandler aph;
 
     public LoginHandler() {
         this.pph = new PassengerPersistanceHandler();
+        this.aph = new AdminPersistanceHandler();
     }
     
     public int login(String email, String password) {
@@ -46,4 +49,43 @@ public class LoginHandler {
         return 0;
     }
 
+    public int adminLogin(String email, String password) {
+        // Status codes
+        // 0 - Success
+        // 1 - Already logged in
+        // 2 - Invalid email
+        // 3 - Invalid password
+        // 4 - Inactive or deleted account
+        if (SessionManager.isAdminLoggedIn()) {
+            return 1;
+        }
+
+        Admin admin = (Admin) aph.findByEmail(email == null ? null : email.trim());
+        if (admin == null) {
+            return 2;
+        }
+
+        if (!"Active".equalsIgnoreCase(admin.getStatus())) {
+            return 4;
+        }
+
+        String storedPassword = admin.getPasswordHash();
+        String hashedInput = Passenger.GenerateHash(password);
+        boolean passwordMatches = password.equals(storedPassword) || hashedInput.equals(storedPassword);
+
+        if (passwordMatches) {
+            SessionManager.createAdminSession(admin);
+            return 0;
+        }
+
+        return 3;
+    }
+
+    public int adminLogout() {
+        if (!SessionManager.isAdminLoggedIn()) {
+            return 1;
+        }
+        SessionManager.logout();
+        return 0;
+    }
 }

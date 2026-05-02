@@ -6,6 +6,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import com.metromanage.domain.SessionManager;
+
 /**
  * Enhanced Dashboard UI with modern aesthetics, smooth animations, and refined typography.
  * Uses the existing color palette with improved visual hierarchy and user experience.
@@ -20,6 +22,12 @@ public class DashBoard extends JFrame {
     private static final Color OFFWHITE = Color.WHITE;
 
     public DashBoard() {
+        if (!SessionManager.isAdminLoggedIn()) {
+            JOptionPane.showMessageDialog(null, "Please sign in as admin first.");
+            new LoginPage();
+            dispose();
+            return;
+        }
         setTitle("Dashboard - MetroManage");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1200, 750);

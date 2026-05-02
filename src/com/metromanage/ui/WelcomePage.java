@@ -76,7 +76,7 @@ public class WelcomePage extends JFrame {
         nav.setOpaque(false);
         nav.setLayout(new FlowLayout(FlowLayout.RIGHT, 28, 8));
 
-        String[] items = {"Login", "Sign Up", "Services", "Contact"};
+        String[] items = {"Login", "Services", "Contact"};
         for (String item : items) {
             JLabel navItem = createNavItem(item);
             nav.add(navItem);
@@ -142,9 +142,6 @@ public class WelcomePage extends JFrame {
         switch (item) {
             case "Login":
                 openLogin();
-                break;
-            case "Sign Up":
-                openSignUp();
                 break;
             case "Services":
                 JOptionPane.showMessageDialog(WelcomePage.this, "Services - Coming Soon!");
@@ -307,18 +304,8 @@ public class WelcomePage extends JFrame {
         });
     }
 
-    private void openSignUp() {
-        SwingUtilities.invokeLater(() -> {
-            SignUpPage signup = new SignUpPage();
-            signup.setVisible(true);
-        });
-    }
-
     private void openDashboard() {
-        SwingUtilities.invokeLater(() -> {
-            DashBoard dash = new DashBoard();
-            dash.setVisible(true);
-        });
+        openLogin();
     }
 
   

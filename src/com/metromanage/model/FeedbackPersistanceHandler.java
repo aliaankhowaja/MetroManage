@@ -43,10 +43,9 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
 
     @Override
     public Object find(int id) {
-        long numericId = id;
-        String findQuery = "Select * From Feedback Where id = ?";
+        String findQuery = "Select * From Feedback Where feedbackID = ?";
         try (PreparedStatement pstmt = dbConnection.prepareStatement(findQuery)) {
-            pstmt.setLong(1, numericId);
+            pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     Feedback feedback = new Feedback();
@@ -77,7 +76,7 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Feedback feedback = new Feedback();
-                    feedback.setFeedbackID(rs.getInt("id"));
+                    feedback.setFeedbackID(rs.getInt("feedbackID"));
                     feedback.setPassengerID(rs.getInt("passengerID"));
                     feedback.setType(rs.getString("type"));
                     feedback.setComments(rs.getString("comments"));
@@ -107,7 +106,7 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Feedback feedback = new Feedback();
-                    feedback.setFeedbackID(rs.getInt("id"));
+                    feedback.setFeedbackID(rs.getInt("feedbackID"));
                     feedback.setPassengerID(rs.getInt("passengerID"));
                     feedback.setType(rs.getString("type"));
                     feedback.setComments(rs.getString("comments"));
@@ -147,17 +146,17 @@ public class FeedbackPersistanceHandler extends PersistanceHandler {
      */
     public ArrayList<FeedbackWithPassenger> getFeedbackWithPassengerInfo() {
         ArrayList<FeedbackWithPassenger> feedbackList = new ArrayList<>();
-        String query = "SELECT f.id, f.passengerID, f.type, f.comments, f.timestamp, " +
+        String query = "SELECT f.feedbackID, f.passengerID, f.type, f.comments, f.timestamp, " +
                       "p.name as passengerName, p.email as passengerEmail " +
                       "FROM Feedback f " +
-                      "LEFT JOIN Passenger p ON f.passengerID = p.id " +
+                      "LEFT JOIN Passenger p ON f.passengerID = p.passengerID " +
                       "ORDER BY f.timestamp DESC";
         
         try (PreparedStatement pstmt = dbConnection.prepareStatement(query)) {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     FeedbackWithPassenger feedback = new FeedbackWithPassenger();
-                    feedback.feedbackID = rs.getInt("id");
+                    feedback.feedbackID = rs.getInt("feedbackID");
                     feedback.passengerID = rs.getInt("passengerID");
                     feedback.type = rs.getString("type");
                     feedback.comments = rs.getString("comments");

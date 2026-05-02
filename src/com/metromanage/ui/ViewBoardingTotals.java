@@ -6,6 +6,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import com.metromanage.domain.Route;
+import com.metromanage.domain.LoginHandler;
 import com.metromanage.model.RidePersistanceHandler;
 import com.metromanage.model.RidePersistanceHandler.BoardingData;
 import com.metromanage.model.RoutePersistanceHandler;
@@ -721,6 +722,7 @@ public class ViewBoardingTotals extends JFrame {
                     JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
+                    new LoginHandler().adminLogout();
                     new WelcomePage();
                     dispose();
                 }

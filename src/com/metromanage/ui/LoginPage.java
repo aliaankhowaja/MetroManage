@@ -36,7 +36,6 @@ public class LoginPage extends JFrame {
     private JTextField txtEmail;
     private JPasswordField txtPassword;
     private JButton btnLogin;
-    private JLabel lblSignUp;
     private JLabel lblForgotPassword;
 
     public LoginPage() {
@@ -191,40 +190,6 @@ public class LoginPage extends JFrame {
         btnLogin.addActionListener(e -> handleLogin());
         contentPanel.add(btnLogin);
         contentPanel.add(Box.createVerticalStrut(20));
-
-        // Sign up link
-        JPanel signUpPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        signUpPanel.setOpaque(false);
-        signUpPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        
-        JLabel lblDontHave = new JLabel("Don't have an account?");
-        lblDontHave.setFont(getCustomFont(Font.PLAIN, 13));
-        lblDontHave.setForeground(TEXT_MUTED);
-        
-        lblSignUp = new JLabel("Sign Up");
-        lblSignUp.setFont(getCustomFont(Font.BOLD, 13));
-        lblSignUp.setForeground(PRIMARY_COLOR);
-        lblSignUp.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        lblSignUp.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                handleSignUp();
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                lblSignUp.setText("<html><u>Sign Up</u></html>");
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                lblSignUp.setText("Sign Up");
-            }
-        });
-        
-        signUpPanel.add(lblDontHave);
-        signUpPanel.add(lblSignUp);
-        contentPanel.add(signUpPanel);
 
         card.add(contentPanel, BorderLayout.CENTER);
 
@@ -445,7 +410,7 @@ public class LoginPage extends JFrame {
     
     // Use the backend LoginHandler
     LoginHandler loginHandler = new LoginHandler();
-    int result = loginHandler.login(email, password);
+    int result = loginHandler.adminLogin(email, password);
     
     switch (result) {
         case 0:  // Success
@@ -458,13 +423,13 @@ public class LoginPage extends JFrame {
             break;
         case 1:  // Already logged in
             JOptionPane.showMessageDialog(this, 
-                "A user is already logged in.", 
+                "An admin is already logged in.", 
                 "Login Error", 
                 JOptionPane.WARNING_MESSAGE);
             break;
         case 2:  // Invalid email
             JOptionPane.showMessageDialog(this, 
-                "No account found with this email.", 
+                "No admin account found with this email.", 
                 "Login Error", 
                 JOptionPane.ERROR_MESSAGE);
             break;
@@ -474,19 +439,14 @@ public class LoginPage extends JFrame {
                 "Login Error", 
                 JOptionPane.ERROR_MESSAGE);
             break;
+        case 4:  // Inactive or deleted account
+            JOptionPane.showMessageDialog(this,
+                "This admin account is inactive or deleted.",
+                "Login Error",
+                JOptionPane.ERROR_MESSAGE);
+            break;
     }
 }
-
-    private void handleSignUp() {
-        JOptionPane.showMessageDialog(this, 
-            "Sign up page coming soon!", 
-            "Sign Up", 
-            JOptionPane.INFORMATION_MESSAGE);
-        
-        // Open sign up page (placeholder)
-        // new SignUpPage();
-        // dispose();
-    }
 
     // ==================== HELPER METHODS ====================
 
